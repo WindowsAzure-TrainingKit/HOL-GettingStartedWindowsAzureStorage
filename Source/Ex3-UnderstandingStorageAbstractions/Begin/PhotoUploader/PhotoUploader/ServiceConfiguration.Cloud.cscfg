@@ -8,7 +8,7 @@
       <Setting name="ContainerName" value="gallery" />
     </ConfigurationSettings>
   </Role>
-  <Role name="QuereProcessor_WorkerRole">
+  <Role name="QueueProcessor_WorkerRole">
     <Instances count="1" />
     <ConfigurationSettings>
       <Setting name="Microsoft.WindowsAzure.Plugins.Diagnostics.ConnectionString" value="UseDevelopmentStorage=true" />

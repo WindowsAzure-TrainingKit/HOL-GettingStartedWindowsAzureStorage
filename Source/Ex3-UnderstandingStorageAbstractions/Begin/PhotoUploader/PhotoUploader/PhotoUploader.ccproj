@@ -45,25 +45,25 @@
       <RoleName>PhotoUploader_WebRole</RoleName>
       <UpdateDiagnosticsConnectionStringOnPublish>True</UpdateDiagnosticsConnectionStringOnPublish>
     </ProjectReference>
-    <ProjectReference Include="..\QuereProcessor_WorkerRole\QuereProcessor_WorkerRole.csproj">
-      <Name>QuereProcessor_WorkerRole</Name>
-      <Project>{2cab58fe-fa31-494b-a540-97dc9b50b636}</Project>
+    <ProjectReference Include="..\QueueProcessor_WorkerRole\QueueProcessor_WorkerRole.csproj">
+      <Name>QueueProcessor_WorkerRole</Name>
+      <Project>{b7f3d2aa-8ebc-4525-b821-08abb4850010}</Project>
       <Private>True</Private>
       <RoleType>Worker</RoleType>
-      <RoleName>QuereProcessor_WorkerRole</RoleName>
+      <RoleName>QueueProcessor_WorkerRole</RoleName>
       <UpdateDiagnosticsConnectionStringOnPublish>True</UpdateDiagnosticsConnectionStringOnPublish>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="PhotoUploader_WebRoleContent\" />
     <Folder Include="Profiles" />
-    <Folder Include="QuereProcessor_WorkerRoleContent\" />
+    <Folder Include="QueueProcessor_WorkerRoleContent\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="PhotoUploader_WebRoleContent\diagnostics.wadcfg">
       <SubType>Content</SubType>
     </Content>
-    <Content Include="QuereProcessor_WorkerRoleContent\diagnostics.wadcfg">
+    <Content Include="QueueProcessor_WorkerRoleContent\diagnostics.wadcfg">
       <SubType>Content</SubType>
     </Content>
   </ItemGroup>

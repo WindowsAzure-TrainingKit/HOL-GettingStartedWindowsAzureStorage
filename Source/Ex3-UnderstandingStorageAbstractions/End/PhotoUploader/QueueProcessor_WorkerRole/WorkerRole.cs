@@ -9,17 +9,18 @@ using Microsoft.WindowsAzure.Diagnostics;
 using Microsoft.WindowsAzure.ServiceRuntime;
 using Microsoft.WindowsAzure.Storage;
 
-namespace QuereProcessor_WorkerRole
+namespace QueueProcessor_WorkerRole
 {
     public class WorkerRole : RoleEntryPoint
     {
         public override void Run()
         {
             // This is a sample worker implementation. Replace with your logic.
-            Trace.TraceInformation("QuereProcessor_WorkerRole entry point called", "Information");
+            Trace.TraceInformation("QueueProcessor_WorkerRole entry point called", "Information");
 
             // initialize the account information
             var storageAccount = CloudStorageAccount.Parse(CloudConfigurationManager.GetSetting("StorageConnectionString"));
+
             // retrieve a reference to the messages queue
             var queueClient = storageAccount.CreateCloudQueueClient();
             var queue = queueClient.GetQueueReference("messagequeue");
@@ -39,6 +40,7 @@ namespace QuereProcessor_WorkerRole
                         queue.DeleteMessage(msg);
                     }
                 }
+
             }
         }
 

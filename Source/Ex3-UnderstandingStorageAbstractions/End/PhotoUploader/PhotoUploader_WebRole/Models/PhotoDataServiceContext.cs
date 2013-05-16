@@ -1,10 +1,9 @@
-﻿using Microsoft.WindowsAzure.Storage.Auth;
-using Microsoft.WindowsAzure.Storage.Table;
-using Microsoft.WindowsAzure.Storage.Table.DataServices;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
+using Microsoft.WindowsAzure.Storage.Table;
+using Microsoft.WindowsAzure.Storage.Table.DataServices;
 
 namespace PhotoUploader_WebRole.Models
 {
@@ -13,15 +12,12 @@ namespace PhotoUploader_WebRole.Models
         public PhotoDataServiceContext(CloudTableClient client)
             : base(client)
         {
-            
+
         }
 
-        public IEnumerable<PhotoEntity> Photos
+        public IEnumerable<PhotoEntity> GetPhotos()
         {
-            get
-            {
-                return this.CreateQuery<PhotoEntity>("Photos");
-            }
+            return this.CreateQuery<PhotoEntity>("Photos");
         }
 
         public PhotoEntity GetById(string rowKey)
@@ -35,7 +31,6 @@ namespace PhotoUploader_WebRole.Models
                 return (PhotoEntity)retrievedResult.Result;
             else
                 return null;
-
         }
 
         public void AddPhoto(PhotoEntity photo)
@@ -49,7 +44,7 @@ namespace PhotoUploader_WebRole.Models
         {
             CloudTable table = this.ServiceClient.GetTableReference("Photos");
             TableOperation retrieveOperation = TableOperation.Retrieve<PhotoEntity>(photo.PartitionKey, photo.RowKey);
-            
+
             TableResult retrievedResult = table.Execute(retrieveOperation);
             PhotoEntity updateEntity = (PhotoEntity)retrievedResult.Result;
 

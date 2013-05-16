@@ -19,8 +19,8 @@
       <Setting name="ContainerName" />
     </ConfigurationSettings>
   </WebRole>
-  <WorkerRole name="QuereProcessor_WorkerRole" vmsize="Small">
-    <Imports>     
+  <WorkerRole name="QueueProcessor_WorkerRole" vmsize="Small">
+    <Imports>
       <Import moduleName="Diagnostics" />
     </Imports>
     <ConfigurationSettings>

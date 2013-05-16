@@ -6,11 +6,7 @@ using System.Web.Http;
 using System.Web.Mvc;
 using System.Web.Optimization;
 using System.Web.Routing;
-using Microsoft.WindowsAzure.Storage;
-using Microsoft.WindowsAzure.Storage.Table;
-using Microsoft.WindowsAzure.Storage.Auth;
 using System.Configuration;
-using Microsoft.WindowsAzure;
 
 namespace PhotoUploader_WebRole
 {
@@ -27,11 +23,6 @@ namespace PhotoUploader_WebRole
             FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);
             RouteConfig.RegisterRoutes(RouteTable.Routes);
             BundleConfig.RegisterBundles(BundleTable.Bundles);
-
-            CloudStorageAccount storageAccount = CloudStorageAccount.Parse(CloudConfigurationManager.GetSetting("StorageConnectionString"));
-            CloudTableClient cloudTableClient = storageAccount.CreateCloudTableClient();
-            CloudTable table = cloudTableClient.GetTableReference("Photos");
-            table.CreateIfNotExists();
         }
     }
 }

@@ -1,11 +1,4 @@
-﻿using Microsoft.WindowsAzure;
-using Microsoft.WindowsAzure.ServiceRuntime;
-using Microsoft.WindowsAzure.Storage;
-using Microsoft.WindowsAzure.Storage.Auth;
-using Microsoft.WindowsAzure.Storage.Blob;
-using Microsoft.WindowsAzure.Storage.Queue;
-using Microsoft.WindowsAzure.Storage.Table;
-using PhotoUploader_WebRole.Models;
+﻿using PhotoUploader_WebRole.Models;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -18,7 +11,6 @@ namespace PhotoUploader_WebRole.Controllers
 {
     public class HomeController : Controller
     {
-        private CloudStorageAccount StorageAccount = CloudStorageAccount.Parse(CloudConfigurationManager.GetSetting("StorageConnectionString"));
         //
         // GET: /
 

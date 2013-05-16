@@ -1,18 +1,13 @@
 ﻿using Microsoft.WindowsAzure;
-using Microsoft.WindowsAzure.ServiceRuntime;
 using Microsoft.WindowsAzure.Storage;
-using Microsoft.WindowsAzure.Storage.Auth;
-using Microsoft.WindowsAzure.Storage.Blob;
-using Microsoft.WindowsAzure.Storage.Queue;
 using Microsoft.WindowsAzure.Storage.Table;
 using PhotoUploader_WebRole.Models;
 using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.IO;
-using System.Linq;
 using System.Web;
 using System.Web.Mvc;
+using System.Linq;
+using Microsoft.WindowsAzure.Storage.Blob;
+using Microsoft.WindowsAzure.Storage.Queue;
 
 namespace PhotoUploader_WebRole.Controllers
 {
@@ -27,7 +22,7 @@ namespace PhotoUploader_WebRole.Controllers
             CloudTableClient cloudTableClient = this.StorageAccount.CreateCloudTableClient();
             var photoContext = new PhotoDataServiceContext(cloudTableClient);
 
-            return View(photoContext.Photos.Select(x => this.ToViewModel(x)).ToList());
+            return this.View(photoContext.GetPhotos().Select(x => this.ToViewModel(x)).ToList());
         }
 
         //
@@ -37,18 +32,20 @@ namespace PhotoUploader_WebRole.Controllers
         {
             CloudTableClient cloudTableClient = this.StorageAccount.CreateCloudTableClient();
             var photoContext = new PhotoDataServiceContext(cloudTableClient);
-            PhotoEntity photo = photoContext.Photos.SingleOrDefault(x => x.RowKey.Equals(id));
+            PhotoEntity photo = photoContext.GetPhotos().SingleOrDefault(x => x.RowKey.Equals(id));
 
             if (photo == null)
             {
                 return HttpNotFound();
             }
-
-            //Get URI
+            
             var viewModel = this.ToViewModel(photo);
-            viewModel.Uri = this.GetBlobContainer().GetBlockBlobReference(photo.BlobReference).Uri.ToString();
+            if (!string.IsNullOrEmpty(photo.BlobReference))
+            {
+                viewModel.Uri = this.GetBlobContainer().GetBlockBlobReference(photo.BlobReference).Uri.ToString();
+            }
 
-            return View(viewModel);
+            return this.View(viewModel);
         }
 
         //
@@ -56,8 +53,6 @@ namespace PhotoUploader_WebRole.Controllers
 
         public ActionResult Create()
         {
-            this.EnsureContainerExists();
-
             return View();
         }
 
@@ -67,13 +62,13 @@ namespace PhotoUploader_WebRole.Controllers
         [HttpPost]
         public ActionResult Create(PhotoViewModel photoViewModel, HttpPostedFileBase file, FormCollection collection)
         {
-            if (ModelState.IsValid)
+            if (this.ModelState.IsValid)
             {
-                //Upload image to Blob Storage
                 var photo = this.FromViewModel(photoViewModel);
-                
+
                 if (file != null)
                 {
+                    //Save file stream to Blob Storage
                     var blob = this.GetBlobContainer().GetBlockBlobReference(file.FileName);
                     blob.Properties.ContentType = file.ContentType;
                     blob.UploadFromStream(file.InputStream);
@@ -81,10 +76,11 @@ namespace PhotoUploader_WebRole.Controllers
                 }
                 else
                 {
-                    throw new ArgumentNullException("file");
+                    this.ModelState.AddModelError("File",new ArgumentNullException("file"));
+                    return this.View(photoViewModel);
                 }
 
-                //Save information in Table Storage
+                //Save information to Table Storage
                 CloudTableClient cloudTableClient = this.StorageAccount.CreateCloudTableClient();
                 var photoContext = new PhotoDataServiceContext(cloudTableClient);
                 photoContext.AddPhoto(photo);
@@ -93,11 +89,12 @@ namespace PhotoUploader_WebRole.Controllers
                 var msg = new CloudQueueMessage("Photo Uploaded");
                 this.GetCloudQueue().AddMessage(msg);
 
-                return RedirectToAction("Index");
+                return this.RedirectToAction("Index");
             }
 
-            return View();
+            return this.View();
         }
+
         //
         // GET: /Home/Edit/5
 
@@ -105,18 +102,20 @@ namespace PhotoUploader_WebRole.Controllers
         {
             CloudTableClient cloudTableClient = this.StorageAccount.CreateCloudTableClient();
             var photoContext = new PhotoDataServiceContext(cloudTableClient);
-            PhotoEntity photo = photoContext.Photos.SingleOrDefault(x => x.RowKey.Equals(id));
+            PhotoEntity photo = photoContext.GetPhotos().SingleOrDefault(x => x.RowKey.Equals(id));
 
             if (photo == null)
             {
-                return HttpNotFound();
+                return this.HttpNotFound();
             }
-            
-            //Get URI from Blob storage
-            var viewModel = this.ToViewModel(photo);
-            viewModel.Uri = this.GetBlobContainer().GetBlockBlobReference(photo.BlobReference).Uri.ToString();
 
-            return View(viewModel);
+            var viewModel = this.ToViewModel(photo);
+            if (!string.IsNullOrEmpty(photo.BlobReference))
+            {
+                viewModel.Uri = this.GetBlobContainer().GetBlockBlobReference(photo.BlobReference).Uri.ToString();
+            }
+
+            return this.View(viewModel);
         }
 
         //
@@ -124,18 +123,21 @@ namespace PhotoUploader_WebRole.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Edit(PhotoEntity photo, FormCollection collection)
+        public ActionResult Edit(PhotoViewModel photoViewModel, FormCollection collection)
         {
             if (ModelState.IsValid)
             {
+                var photo = this.FromViewModel(photoViewModel);
+
                 //Update information in Table Storage
                 CloudTableClient cloudTableClient = this.StorageAccount.CreateCloudTableClient();
                 var photoContext = new PhotoDataServiceContext(cloudTableClient);
                 photoContext.UpdatePhoto(photo);
 
-                return RedirectToAction("Index");
+                return this.RedirectToAction("Index");
             }
-            return View();
+
+            return this.View();
         }
 
         //
@@ -143,21 +145,22 @@ namespace PhotoUploader_WebRole.Controllers
 
         public ActionResult Delete(string id)
         {
-            //Get all Photos from Talb
             CloudTableClient cloudTableClient = this.StorageAccount.CreateCloudTableClient();
             var photoContext = new PhotoDataServiceContext(cloudTableClient);
-            PhotoEntity photo = photoContext.Photos.SingleOrDefault(x => x.RowKey.Equals(id));
+            PhotoEntity photo = photoContext.GetPhotos().SingleOrDefault(x => x.RowKey.Equals(id));
 
             if (photo == null)
             {
-                return HttpNotFound();
+                return this.HttpNotFound();
             }
 
-            //Get URI from Blob storage
             var viewModel = this.ToViewModel(photo);
-            viewModel.Uri = this.GetBlobContainer().GetBlockBlobReference(photo.BlobReference).Uri.ToString();
+            if (!string.IsNullOrEmpty(photo.BlobReference))
+            {
+                viewModel.Uri = this.GetBlobContainer().GetBlockBlobReference(photo.BlobReference).Uri.ToString();
+            }
 
-            return View(viewModel);
+            return this.View(viewModel);
         }
 
         //
@@ -170,39 +173,21 @@ namespace PhotoUploader_WebRole.Controllers
             //Delete information From Table Storage
             CloudTableClient cloudTableClient = this.StorageAccount.CreateCloudTableClient();
             var photoContext = new PhotoDataServiceContext(cloudTableClient);
-            var photo = photoContext.Photos.SingleOrDefault(x => x.RowKey.Equals(id));
+            var photo = photoContext.GetPhotos().SingleOrDefault(x => x.RowKey.Equals(id));
             photoContext.DeletePhoto(photo);
 
-            //Deletes the image from Blob storage
-            var blob = this.GetBlobContainer().GetBlockBlobReference(photo.BlobReference);
-            blob.DeleteIfExists();
+            //Deletes the Image from Blob Storage
+            if (!string.IsNullOrEmpty(photo.BlobReference))
+            {
+                var blob = this.GetBlobContainer().GetBlockBlobReference(photo.BlobReference);
+                blob.DeleteIfExists();
+            }
 
             //Send delete notification
             var msg = new CloudQueueMessage("Photo Deleted");
             this.GetCloudQueue().AddMessage(msg);
 
-            return RedirectToAction("Index");
-        }
-
-        private CloudBlobContainer GetBlobContainer()
-        {
-            var client = this.StorageAccount.CreateCloudBlobClient();
-            return client.GetContainerReference(CloudConfigurationManager.GetSetting("ContainerName"));
-        }
-
-        private void EnsureContainerExists()
-        {
-            var container = this.GetBlobContainer();
-            container.CreateIfNotExists();
-            container.SetPermissions(new BlobContainerPermissions { PublicAccess = BlobContainerPublicAccessType.Blob });
-        }
-
-        private CloudQueue GetCloudQueue()
-        {
-            var queueClient = this.StorageAccount.CreateCloudQueueClient();
-            var queue = queueClient.GetQueueReference("messagequeue");
-            queue.CreateIfNotExists();
-            return queue;
+            return this.RedirectToAction("Index");
         }
 
         private PhotoViewModel ToViewModel(PhotoEntity photo)
@@ -212,20 +197,41 @@ namespace PhotoUploader_WebRole.Controllers
                 PartitionKey = photo.PartitionKey,
                 RowKey = photo.RowKey,
                 Title = photo.Title,
-                Description = photo.Description                
+                Description = photo.Description
             };
         }
 
         private PhotoEntity FromViewModel(PhotoViewModel photoViewModel)
         {
-            return new PhotoEntity
-            {
-                PartitionKey = photoViewModel.PartitionKey,
-                RowKey = photoViewModel.RowKey,
-                Title = photoViewModel.Title,
-                Description = photoViewModel.Description
-            };
+            var photo = new PhotoEntity
+                {
+                    Title = photoViewModel.Title,
+                    Description = photoViewModel.Description
+                };
+
+            photo.PartitionKey = photoViewModel.PartitionKey ?? photo.PartitionKey;
+            photo.RowKey = photoViewModel.RowKey ?? photo.RowKey;
+            return photo;
         }
 
+        private CloudBlobContainer GetBlobContainer()
+        {
+            var client = this.StorageAccount.CreateCloudBlobClient();
+            var container = client.GetContainerReference(CloudConfigurationManager.GetSetting("ContainerName"));
+            if (container.CreateIfNotExists())
+            {
+                container.SetPermissions(new BlobContainerPermissions { PublicAccess = BlobContainerPublicAccessType.Blob });
+            }
+
+            return container;
+        }
+
+        private CloudQueue GetCloudQueue()
+        {
+            var queueClient = this.StorageAccount.CreateCloudQueueClient();
+            var queue = queueClient.GetQueueReference("messagequeue");
+            queue.CreateIfNotExists();
+            return queue;
+        }
     }
 }

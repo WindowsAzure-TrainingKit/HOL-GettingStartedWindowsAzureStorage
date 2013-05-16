@@ -9,19 +9,19 @@ using Microsoft.WindowsAzure.Diagnostics;
 using Microsoft.WindowsAzure.ServiceRuntime;
 using Microsoft.WindowsAzure.Storage;
 
-namespace QuereProcessor_WorkerRole
+namespace QueueProcessor_WorkerRole
 {
     public class WorkerRole : RoleEntryPoint
     {
         public override void Run()
         {
             // This is a sample worker implementation. Replace with your logic.
-            Trace.TraceInformation("QuereProcessor_WorkerRole entry point called", "Information");
+            Trace.TraceInformation("QueueProcessor_WorkerRole entry point called", "Information");
 
             while (true)
             {
                 Thread.Sleep(10000);
-                Trace.TraceInformation("Working", "Information");     
+                Trace.TraceInformation("Working", "Information");
             }
         }
 

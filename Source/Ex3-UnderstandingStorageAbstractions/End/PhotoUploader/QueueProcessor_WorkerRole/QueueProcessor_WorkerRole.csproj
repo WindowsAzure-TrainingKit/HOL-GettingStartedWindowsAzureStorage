@@ -5,11 +5,11 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{2CAB58FE-FA31-494B-A540-97DC9B50B636}</ProjectGuid>
+    <ProjectGuid>{87BBF9A5-C6CE-424C-A299-5BA1470FBE96}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>QuereProcessor_WorkerRole</RootNamespace>
-    <AssemblyName>QuereProcessor_WorkerRole</AssemblyName>
+    <RootNamespace>QueueProcessor_WorkerRole</RootNamespace>
+    <AssemblyName>QueueProcessor_WorkerRole</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <RoleType>Worker</RoleType>
