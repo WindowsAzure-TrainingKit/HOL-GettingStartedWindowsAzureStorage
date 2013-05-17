@@ -1,4 +1,4 @@
-# Introduction to Windows Azure #
+﻿# Getting Started With Windows Azure Storage #
 
 ## Hands-On Lab ##
 
