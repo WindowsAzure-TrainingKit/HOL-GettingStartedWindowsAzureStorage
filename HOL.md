@@ -986,6 +986,46 @@ In this task, you will use Queues to simulate a Notification service, where a Me
 
 	_Worker role processing the queue_
 
+<a name="Ex3Task5" />
+#### Task 5 - Verification with Visual Studio####
+
+In this task, you will use Visual Studio to inspect Windows Azure Storage Account.
+
+1. If not already opened, open Visual Studio.
+
+1. Go to **VIEW** menu, and open **Server Explorer**.
+
+1. In the Server Explorer pane, right click in **Windows Azure Storage** and select **Add New Storage Account**.
+
+1. Select **Manually entered credentials** and complete the **Account name** and **Account key** fields with the keys of the storage account you've created in Exercise 1.
+
+1. Click **OK**.
+
+1. Expand the Storage Account you configured in the Server explorer
+
+	![Add New Storage Account](Images/add-new-storage-account.png?raw=true "Add New Storage Account")
+
+	_Add New Storage Account_
+
+	>**NOTE**: You'll notice that there is an enrty for Tables, Blobs and Queeus
+
+1. Expand the Tables container. You will see the **Photos** Table inside table container
+
+1. Right click in **Photos** table and select **View Table**
+
+	![Photos Table](Images/photo-table.png?raw=true "Photos Table")
+
+	_Photos Table_
+
+	>**NOTE**: You can see the data you've created in the previous task. Notice the blob reference column. This column references the name of a blob storage.
+
+1. Expand the Blobs container. Right click in gallery blob and **View Blob Contaienr** 
+
+	![Gallery Blob Container](Images/blob-container.png?raw=true "Gallery Blob Container")
+
+	_Gallery Blob Container_
+
+
 
 ---
 
