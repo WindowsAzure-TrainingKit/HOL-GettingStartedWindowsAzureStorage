@@ -5,23 +5,23 @@
 <a name="Overview" />
 ## Overview ##
 
-In this lab, you will learn the basics of Windows Azure Storage, how to create and configure storage accounts and how you can programmatically can access the different types of storage service. **Blobs**, **Tables**, and **Queues** are all available as part of the **Windows Azure Storage** account, and provide durable storage on the Windows Azure platform. All are accessible from both inside and outside the Windows Azure platform by using classes in the [Windows Azure Storage Client SDK](http://msdn.microsoft.com/en-us/library/microsoft.windowsazure.storageclient.aspx), or via URI using [REST APIs]  (http://msdn.microsoft.com/en-us/library/dd179355.aspx). Windows Azure Table Storage also supports LINQ access.
+In this lab, you will learn the basics of **Windows Azure Storage**, how to create and configure storage accounts and how you can programmatically can access the different types of storage service. **Blobs**, **Tables**, and **Queues** are all available as part of the **Windows Azure Storage** account, and provide durable storage on the Windows Azure platform. These services are accessible from both inside and outside the Windows Azure platform by using the [Windows Azure Storage Client SDK](http://msdn.microsoft.com/en-us/library/microsoft.windowsazure.storageclient.aspx), or via URI using [REST APIs]  (http://msdn.microsoft.com/en-us/library/dd179355.aspx).
 
-The **Windows Azure Storage** offers the following services:
+You will learn how the following services work:
 
 ![storage-diagram](Images/storage-diagram.png?raw=true)
 
 **Table Storage**
 
-Table storage is a collection of row like entities, each of which can contain up to 255 properties; however unlike tables in a database, there is no schema that enforces a certain set of values on all the rows within a table. And while a table stores structured data, it does not provide any way to represent relationships between data. Windows Azure Storage tables are more like rows within a spreadsheet application such as Excel than rows within a database such as SQL Database, in that each row can contain a different number of columns, and of different data types, than the other rows in the same table.
+Table storage is a collection of row like entities, each of which can contain up to 255 properties. There is no schema that enforces a certain set of values on all the rows within a table, unlike tables in a database. It does not provide any way to represent relationships between data. Windows Azure Storage tables are more like rows within a spreadsheet application such as Excel than rows within a database such as SQL Database, in that each row can contain a different number of columns, and of different data types, than the other rows in the same table.
 
 **Blog Storage**
 
-Blobs provide a way to store large amounts of unstructured, binary data, such as video, audio, images, etc.  In fact, one of the features of blobs is streaming content such as video or audio.
+Blobs provide a way to store large amounts of unstructured, binary data, such as video, audio, images, etc.  One of the features of blobs is streaming content such as video or audio.
 
 **Queue Storage**
 
-Queues provide storage for passing messages between applications, similar to Microsoft Message Queuing (MSMQ.) Messages stored to the queue are limited to a maximum of 8KB in size, and are generally stored and retrieved on a first in, first out (FIFO,) basis; however FIFO is not guaranteed. Processing messages from a queue is a two stage process, which involves getting the message, and then deleting the message after it has been processed.  This pattern allows you to implement guaranteed message delivery by leaving the message in the queue until it has been fully processed.
+Queues provide storage for passing messages between applications. Messages stored to the queue are limited to a maximum of 8KB in size, and are generally stored and retrieved on a first in, first out (FIFO) basis (however FIFO is not guaranteed). Processing messages from a queue is a two stage process, which involves getting the message, and then deleting the message after it has been processed.  This pattern allows you to implement guaranteed message delivery by leaving the message in the queue until it has been fully processed.
 
 
 <a name="Objectives" />
@@ -82,14 +82,14 @@ Estimated time to complete this lab: **60** minutes.
 <a name="Exercise1" />
 ### Exercise 1: Creating a Windows Azure Storage Account ###
 
-This exercise describes how to create a storage account in the Windows Azure Management Portal. To store files and data in the Blob, Table, and Queue services in Windows Azure, you must create a storage account in the geographic region where you want to store the data. A storage account can contain up to 100 TB of blob, table, and queue data. You can create up to five storage accounts for each Windows Azure subscription.
- 
+This exercise describes how to create a storage account in the Windows Azure Management Portal. To store files and data in the storage services in Windows Azure, you must create a storage account in the geographic region where you want to store the data.
+
+> **Note:** A storage account can contain up to 100 TB of blob, table, and queue data. You can create up to five storage accounts for each Windows Azure subscription.
 
 <a name="Ex1Task1" />
 #### Task 1 - Creating an Storage Account from Management Portal ####
 
 In this task you will learn how to create a new Storage Account using the Management Portal.
-
 
 1. Navigate to http://manage.windowsazure.com using a Web browser and sign in using the Microsoft Account associated with your Windows Azure account.
 
@@ -126,7 +126,7 @@ In this exercise, you will configure the common settings for your storage accoun
 <a name="Ex2Task1" />
 #### Task 1 - Enabling Geo-Replication ####
 
-When geo-replication is turned on for a storage account, the stored content is replicated to a secondary location to enable failover to that location in case of a major disaster in the primary location. The secondary location is in the same region, but is hundreds of miles from the primary location. This is the highest level of storage durability, known as geo redundant storage (GRS). Geo-replication is turned on by default.
+Geo-replication replicates the stored content to a secondary location to enable failover to that location in case of a major disaster in the primary location. The secondary location is in the same region, but is hundreds of miles from the primary location. This is the highest level of storage durability, known as geo redundant storage (GRS). Geo-replication is turned on by default.
 
 1.	In the Storage Account page, click the **Configure** tab from the top menu.
 
@@ -163,7 +163,9 @@ You can monitor your storage accounts in the Windows Azure Management Portal. Fo
 
 	> **Note:** There are costs considerations when you select monitoring. For more information, see [Storage Analytics and Billing](http://msdn.microsoft.com/en-us/library/windowsazure/hh360997.aspx).
 
-1. To set the data retention policy, in **Retention** (in days), type the number of days of data to retain from 1-365 days. If you do not want to set a retention policy, enter zero. If there is no retention policy, it is up to you to delete the monitoring data. We recommend setting a retention policy based on how long you want to retain storage analytics data for your account so that old and unused analytics data can be deleted by system at no cost.
+1. To set the data retention policy, in **Retention** (in days), type the number of days of data to retain from 1-365 days. If there is no retention policy (by entering zero value), it is up to you to delete the monitoring data. 
+
+	> **Note:** It's recommended setting a retention policy based on how long you want to retain storage analytics data for your account so that old and unused analytics data can be deleted by system at no cost.
 
 1. Once Monitoring is enabled, you can customize the **Dashboard** to choose up to six metrics to plot on the metrics chart. There are nine available metrics for each service. To configure this, go to the **Dashboard** page.
 
@@ -224,7 +226,7 @@ You can monitor your storage accounts in the Windows Azure Management Portal. Fo
 <a name="Ex2Task3" />
 #### Task 3 - Configuring Logging ####
 
-For each of the storage services available with your storage account (Blob, Table, and Queue), you can save diagnostics logs for Read Requests, Write Requests, and/or Delete Requests, and can set the data retention policy for each of the services. In this task you will configure logging for your storage account.
+You can save diagnostics logs for Read Requests, Write Requests, and/or Delete Requests, and can set the data retention policy for each of the services. In this task you will configure logging for your storage account.
 
 1. In the **Configure** page, go to the **Logging** section.
 
@@ -239,6 +241,7 @@ For each of the storage services available with your storage account (Blob, Tabl
 
 <a name="Ex2Task4" />
 #### Task 4 - Managing Account Keys ####
+
 When you create a storage account, Windows Azure generates two 512-bit storage access keys, which are used for authentication when the storage account is accessed. By providing two storage access keys, Windows Azure enables you to regenerate the keys with no interruption to your storage service or access to that service.
 
 1.	In the Storage Account Dashboard, select the option **Manage Access Keys** from the bottom menu.
@@ -257,19 +260,19 @@ When you create a storage account, Windows Azure generates two 512-bit storage a
 
 	> **Note:** Regenerating your access keys affects virtual machines, media services, and any applications that are dependent on the storage account.
 
+	Next exercise, you will consume Windows Azure Storage services from a MVC application.
 
 <a name="Exercise3"></a>
 ###Exercise 3: Understanding the Windows Azure Storage Abstractions ###
 
-This sample application is comprised of 5 Views, one for each CRUD operation (Create, Read, Update, Delete) and one to list all the entities from the Table storage. In this exercise, you will update the MVC application actions to perform operations against each Storage service (Table, Blob and Queue).
-
+This sample application is comprised of 5 Views, one for each CRUD operation (Create, Read, Update, Delete) and one to list all the entities from the Table storage. In this exercise, you will update the MVC application actions to perform operations against each Storage service (Table, Blob and Queue) using **Windows Azure SDK v2.0**.
 
 <a name="Ex3Task1" />
 #### Task 1 - Configuring Storage Account in the Cloud Project ####
 
 In this task you will configure the Storage Connection String of the application with the Storage Account you previously created using the Access Key you took note from the previous Exercise.
 
-1. Open **Begin** solution located in _Source\Ex3-UnderstandingStorageAbstractions\Begin\PhotoUploader_ in Visual Studio with Administrative rights. Make sure to set Cloud Project as default project.
+1. Open **Begin** solution located in _Source\Ex3-UnderstandingStorageAbstractions\Begin\PhotoUploader_ in Visual Studio with Administrative rights. Make sure to set **Cloud Project** as default project.
 
 1. Go to the **PhotoUploader_WebRole** located in **Roles** folder in the **PhotoUploader** solution. Right click on it and select **Properties**.
 
@@ -327,7 +330,7 @@ In this task you will update the MVC application actions to perform operations a
 
 	![Add new class](Images/add-new-class.png?raw=true "Add new class")
 
-	_Add new class_
+	_Adding a new class_
 
 1. In the **Add New Item** dialog box name the class **PhotoDataServiceContext.cs** and click **Add**. 
 
