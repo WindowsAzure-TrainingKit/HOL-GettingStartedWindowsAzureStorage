@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <DependencyCheckerConfiguration version="2.0">
-	<title>Exploring Windows Azure Storage - for Visual Studio 2012</title>
+	<title>Getting Started With Windows Azure Storage</title>
 	<dependencies>
 		<dependency hint="HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\DevDiv\Web Tools\Servicing\1~.0\VWDExpress11.Version,HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\DevDiv\Web Tools\Servicing\1~.0\VisualStudio11.Version;^1\.[0-9]\.([3-9][0-9]\d*).[0-9]$"
             name="Visual Studio Web Development Feature Or Visual Studio Express 2012 for Web"
