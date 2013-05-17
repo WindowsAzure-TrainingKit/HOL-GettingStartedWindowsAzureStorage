@@ -993,9 +993,13 @@ In this task, you will use Visual Studio to inspect Windows Azure Storage Accoun
 
 1. If not already opened, open Visual Studio.
 
-1. Go to **VIEW** menu, and open **Server Explorer**.
+1. Go to **VIEW** menu, and open **Database Explorer**.
 
 1. In the Server Explorer pane, right click in **Windows Azure Storage** and select **Add New Storage Account**.
+
+	![Database Explorer](Images/database-explorer.png?raw=true "Database Explorer")
+
+	_Database Explorer_
 
 1. Select **Manually entered credentials** and complete the **Account name** and **Account key** fields with the keys of the storage account you've created in Exercise 1.
 
