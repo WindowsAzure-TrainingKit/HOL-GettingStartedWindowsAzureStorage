@@ -5,7 +5,7 @@
 <a name="Overview" />
 ## Overview ##
 
-In this lab, you will learn the basics of **Windows Azure Storage**, how to create and configure storage accounts and how you can programmatically can access the different types of storage service. **Blobs**, **Tables**, and **Queues** are all available as part of the **Windows Azure Storage** account, and provide durable storage on the Windows Azure platform. These services are accessible from both inside and outside the Windows Azure platform by using the [Windows Azure Storage Client SDK](http://msdn.microsoft.com/en-us/library/microsoft.windowsazure.storageclient.aspx), or via URI using [REST APIs]  (http://msdn.microsoft.com/en-us/library/dd179355.aspx).
+In this lab, you will learn the basics of **Windows Azure Storage**, how to create and configure storage accounts and how you can programmatically access the different types of storage service. **Blobs**, **Tables**, and **Queues** are all available as part of the **Windows Azure Storage** account, and provide durable storage on the Windows Azure platform. These services are accessible from both inside and outside the Windows Azure platform by using the [Windows Azure Storage Client SDK](http://msdn.microsoft.com/en-us/library/microsoft.windowsazure.storageclient.aspx), or via URI using [REST APIs]  (http://msdn.microsoft.com/en-us/library/dd179355.aspx).
 
 You will learn how the following services work:
 
@@ -38,7 +38,7 @@ In this hands-on lab, you will learn how to:
 
 The following is required to complete this hands-on lab:
 
-- [Microsoft Visual Studio 2012] [1]
+- [Microsoft Visual Studio Express 2012 for Web] [1]
 - [Windows Azure Tools for Microsoft Visual Studio 2.0] [2]
 - A Windows Azure subscription - [sign up for a free trial][3]
 
@@ -179,13 +179,13 @@ You can monitor your storage accounts in the Windows Azure Management Portal. Fo
 
 	> **Note:** You can hide metrics that are plotted on the chart by clearing the check box by the metric header.
 
-1.	By default, the chart shows trends, displaying only the current value of each metric (the **Relative** option at the top of the chart). To display a Y axis so you can see absolute values, select **Absolute**.
+1.	By default, the chart shows trends, displaying only the current value of each metric (the **Relative** option at the top of the chart). To display a Y axis, so you can see absolute values, select **Absolute**.
 
 	![dashboard-absolute-values](Images/dashboard-absolute-values.png?raw=true)
 
 	_Changing Chart values to Absolute_
 
-1.	To change the time range the metrics chart displays, select **6 hours**, 2**4 hours**, or **7 days** at the top of the chart.
+1.	To change the time range the metrics chart displays, select **6 hours**, **24 hours**, or **7 days** at the top of the chart.
 
 	![dashboard-time-ranges](Images/dashboard-time-ranges.png?raw=true)
 
@@ -230,7 +230,7 @@ You can save diagnostics logs for Read Requests, Write Requests, and/or Delete R
 
 1. In the **Configure** page, go to the **Logging** section.
 
-1.	For each service (Blob, Table, and Queue), you can configure the types of request to log: Read Requests, Write Requests, and Delete Requests. You can also configure the number of days to retain the logged data. Enter zero is if you do not want to set a retention policy. If you do not set a retention policy, it is up to you to delete the logs.
+1.	For each service (Blob, Table, and Queue), you can configure the types of request to log: Read Requests, Write Requests, and Delete Requests. You can also configure the number of days to retain the logged data. Enter zero if you do not want to set a retention policy. If you do not set a retention policy, it is up to you to delete the logs.
 
 	![configuring-storage-logging](Images/configuring-storage-logging.png?raw=true)
 
@@ -242,7 +242,7 @@ You can save diagnostics logs for Read Requests, Write Requests, and/or Delete R
 <a name="Ex2Task4" />
 #### Task 4 - Managing Account Keys ####
 
-When you create a storage account, Windows Azure generates two 512-bit storage access keys, which are used for authentication when the storage account is accessed. By providing two storage access keys, Windows Azure enables you to regenerate the keys with no interruption to your storage service or access to that service.
+When you create a storage account, Windows Azure generates two 512-bit storage access keys, which are used for authentication when the storage account is accessed. By providing two storage access keys, Windows Azure enables you to regenerate the keys with no interruption to your storage service or access to it.
 
 1.	In the Storage Account Dashboard, select the option **Manage Access Keys** from the bottom menu.
 
@@ -265,28 +265,28 @@ When you create a storage account, Windows Azure generates two 512-bit storage a
 <a name="Exercise3"></a>
 ###Exercise 3: Understanding the Windows Azure Storage Abstractions ###
 
-This sample application is comprised of 5 Views, one for each CRUD operation (Create, Read, Update, Delete) and one to list all the entities from the Table storage. In this exercise, you will update the MVC application actions to perform operations against each Storage service (Table, Blob and Queue) using **Windows Azure SDK v2.0**.
+This sample application is comprised of 5 Views, one for each CRUD operation (Create, Read, Update, Delete) and one to list all the entities from the Table storage. In this exercise, you will update the MVC application actions to perform operations against each storage service (Table, Blob and Queue) using **Windows Azure SDK v2.0**.
 
 <a name="Ex3Task1" />
 #### Task 1 - Configuring Storage Account in the Cloud Project ####
 
-In this task you will configure the Storage Connection String of the application with the Storage Account you previously created using the Access Key you took note from the previous Exercise.
+In this task you will configure the _storage connection string_ of the application with the storage account you previously created using the _Access Key_ you took note from the previous exercise.
 
-1. Open **Begin** solution located in _Source\Ex3-UnderstandingStorageAbstractions\Begin\PhotoUploader_ in Visual Studio with Administrative rights. Make sure to set **Cloud Project** as default project.
+1. Open **Visual Studio Express 2012 for Web** as Administrator.
 
-1. Go to the **PhotoUploader_WebRole** located in **Roles** folder in the **PhotoUploader** solution. Right click on it and select **Properties**.
+1. Browse to the **Source\Ex3-UnderstandingStorageAbstractions\Begin\PhotoUploader** folder of this lab and open the **Begin.sln** solution. Make sure to set the **PhotoUploader** cloud project as the default project.
+
+1. Go to the **PhotoUploader_WebRole** located in the **Roles** folder of the **PhotoUploader** solution. Right-click it and select **Properties**.
 
 	![Web Role Properties](Images/webrol-properties.png?raw=true "WebRol Properties")
 
 	_Web Role Properties_
 
-1. Go to **Settings** tab and locate the _StorageConnectionString_ settings
+1. Go to the **Settings** tab and locate the _StorageConnectionString_ setting. Click the ellipsis beside the _UseDevelopmentStorage=true_ value.
 
 	![Settings Tab](Images/settings-tab.png?raw=true "Settings Tab")
 
 	_Settings Tab_
-
-1. Click ellipsis from _StorageConnectionString_ beside the _UseDevelopmentStorage=true_ value.
 
 1. Select **Manually Entered Credentials** and set the **Account name** and **Account key** values from the previous exercise. 
 
@@ -311,28 +311,28 @@ In this task you will update the MVC application actions to perform operations a
 
 1. Update the class to inherit from **TableEntity**. The TableEntity has a **PartitionKey** and  **RowKey** property that need to be set when adding a new row to the Table Storage. To do so, add the following Constructor and inherit the class from **TableEntity**.
 
-	(Code Snippet - _Ex3-InheritingTableEntity_)
+	(Code Snippet - _GettingStartedWindowsAzureStorage - Ex3-InheritingTableEntity_)
 	<!-- mark:3-7 -->
 	````C#
 	public class PhotoEntity : TableEntity
 	{
-		  public PhotoEntity()
-		  {
-				PartitionKey = "Photo";
-				RowKey = Guid.NewGuid().ToString());
-		  }
+		public PhotoEntity()
+		{
+			PartitionKey = "Photo";
+			RowKey = Guid.NewGuid().ToString();
+		}
 
-		  ...
+		...
 	}
 	````
 
-1. Now you will add a new class to implement a **TableServiceContext** to interact with Table Storage. Right click in **Models** folder and select **Add** | **Class**
+1. Now you will add a new class to implement a **TableServiceContext** to interact with Table Storage. Right-click the **Models** folder and select **Add** | **Class**.
 
 	![Add new class](Images/add-new-class.png?raw=true "Add new class")
 
 	_Adding a new class_
 
-1. In the **Add New Item** dialog box name the class **PhotoDataServiceContext.cs** and click **Add**. 
+1. In the **Add New Item** window, set the name of the class to **PhotoDataServiceContext.cs** and click **Add**. 
 
 	![PhotoDataServiceContext class](Images/photodataservicecontext-class.png?raw=true "PhotoDataServiceContext class")
 
@@ -347,7 +347,7 @@ In this task you will update the MVC application actions to perform operations a
 
 1. Replace the class content with the following code. 
 
-	(Code Snippet - _Ex3-PhotoDataServiceContext_)
+	(Code Snippet - _GettingStartedWindowsAzureStorage - Ex3-PhotoDataServiceContext_)
 
 	````C#
 	public class PhotoDataServiceContext : TableServiceContext
@@ -366,9 +366,9 @@ In this task you will update the MVC application actions to perform operations a
 	
 	>**Note**: You need to make the class inherit from TableServiceContext to interact with Table Storage.
 
-1. Now, you will add an operation to retrieve a Single Entity from the table. Add the following code:
+1. Now, you will add an operation to retrieve a single entity from the table. Add the following code to the **PhotoDataServiceContext** class:
 
-	(Code Snippet - _Ex3-DataContextGetById_)
+	(Code Snippet - _GettingStartedWindowsAzureStorage - Ex3-DataContextGetById_)
 
 	````C#
 	public PhotoEntity GetById(string rowKey)
@@ -387,9 +387,9 @@ In this task you will update the MVC application actions to perform operations a
 
 	>**Note**: The following code uses a **TableOperation** to retrieve the photo with the specific **RowKey**. This method returns just one entity, rather than a collection, and the returned value in **TableResult.Result** is a **PhotoEntity**.
 
-1.	In order to add a New Entity, you can use the **Insert** table operation. Add the following code
+1.	In order to add a new entity, you can use the **Insert** table operation. Add the following code to implement it:
 
-	(Code Snippet - _Ex3-DataContextAddPhoto_)
+	(Code Snippet - _GettingStartedWindowsAzureStorage - Ex3-DataContextAddPhoto_)
 
 	````C#
 	public void AddPhoto(PhotoEntity photo)
@@ -402,9 +402,9 @@ In this task you will update the MVC application actions to perform operations a
 
 	>**Note**: To prepare the insert operation, a **TableOperation** is created to insert the photo entity into the table. Finally, the operation is executed by calling **CloudTable.Execute.**
 
-1. Updates are similar to insert, but first we need to retrieve the entity and then use a **Replace** table operation. Add the following code
+1. **Update** operations are similar to insert, but first we need to retrieve the entity and then use a **Replace** table operation. Add the following code:
 
-	(Code Snippet - _Ex3-DataContextUpdatePhoto_)
+	(Code Snippet - _GettingStartedWindowsAzureStorage - Ex3-DataContextUpdatePhoto_)
 
 	````C#
 	public void UpdatePhoto(PhotoEntity photo)
@@ -426,9 +426,9 @@ In this task you will update the MVC application actions to perform operations a
 	}
 	````
 
-1. To delete an entity, we need to retrieve it first from the table and then execute a **Delete** table operation. Add the following code.
+1. To delete an entity, we need to first retrieve it from the table and then execute a **Delete** table operation. Add the following code to implement it:
 
-	(Code Snippet - _Ex3-DataContextDeletePhoto_)
+	(Code Snippet - _GettingStartedWindowsAzureStorage - Ex3-DataContextDeletePhoto_)
 
 	````C#
 	public void DeletePhoto(PhotoEntity photo)
@@ -443,11 +443,10 @@ In this task you will update the MVC application actions to perform operations a
 			 TableOperation deleteOperation = TableOperation.Delete(deleteEntity);
 			 table.Execute(deleteOperation);
 		}
-
 	}
 	````
 
-1. Open **HomeController.cs** under **Controllers** folder. We'll update the controller's actions to execute the table operations from the DataContext you created in previous steps. Add the following directives.
+1. Open **HomeController.cs** under **Controllers** folder. We'll update the controller's actions to execute the table operations from the DataContext you created in the previous steps. Add the following using directives.
 
 	````C#
 	using Microsoft.WindowsAzure;
@@ -455,9 +454,10 @@ In this task you will update the MVC application actions to perform operations a
 	using Microsoft.WindowsAzure.Storage.Table;
 	````
 
-1. Add a private field to create a StorageAccount object. This object will be used to perform operations for each Storage Service.
+1. Add a private field to create a _StorageAccount_ object. This object will be used to perform operations for each storage service.
 
-	(Code Snippet - _Ex3-StorageAccountVariable_)
+	(Code Snippet - _GettingStartedWindowsAzureStorage - Ex3-StorageAccountVariable_)
+
 	<!-- mark:3 -->
 	````C#
 	public class HomeController : Controller
@@ -470,7 +470,7 @@ In this task you will update the MVC application actions to perform operations a
 
 1.	In order to display the entities in the View, you will convert them to a ViewModel class. You are going to add two helper methods to convert from **ViewModel** to a **Model** and from a **Model** to a **ViewModel**. Add the following methods at the end of the class declaration.
 
-	(Code Snippet - _Ex3-ViewModelHelpers_)
+	(Code Snippet - _GettingStartedWindowsAzureStorage - Ex3-ViewModelHelpers_)
 
 	````C#
 	private PhotoViewModel ToViewModel(PhotoEntity photo)
@@ -498,9 +498,9 @@ In this task you will update the MVC application actions to perform operations a
 	}
 	````
 
-1. The **Home** page will diplay a list of entities from the Table Storage. To do so, replace the **Index** action to retrieve the entire list of entities from the Table storage using the **PhotoDataServiceContext**.
+1. The **Home** page will diplay a list of entities from the table storage. To do so, replace the **Index** action to retrieve the entire list of entities from the table storage using the **PhotoDataServiceContext** with the following code.
 
-	(Code Snippet - _Ex3-TableStorageIndex_)
+	(Code Snippet - _GettingStartedWindowsAzureStorage - Ex3-TableStorageIndex_)
 
 	````C#
 	public ActionResult Index()
@@ -513,7 +513,7 @@ In this task you will update the MVC application actions to perform operations a
 
 1.	The **Details** view will show specific information of a particular Photo. Replace the **Details** action with the following code to display the information of a single entity using the **PhotoDataServiceContext**.
 
-	(Code Snippet - _Ex3-TableStorageDetails_)
+	(Code Snippet - _GettingStartedWindowsAzureStorage - Ex3-TableStorageDetails_)
 
 	````C#
 	public ActionResult Details(string id)
@@ -532,9 +532,9 @@ In this task you will update the MVC application actions to perform operations a
 	}
 	````
 
-1.	Replace the **Create** _POST_ action with the following code to insert a new entity in the Table Storage.
+1.	Replace the **Create** _POST_ action with the following code to insert a new entity in the table storage.
 
-	(Code Snippet - _Ex3-TableStorageCreate_)
+	(Code Snippet - _GettingStartedWindowsAzureStorage - Ex3-TableStorageCreate_)
 
 	````C#
 	[HttpPost]
@@ -558,7 +558,7 @@ In this task you will update the MVC application actions to perform operations a
 
 1.	Replace the **Edit** _GET_ Action with the following code to retrieve existing entity information from the table.
 
-	(Code Snippet - _Ex3-TableStorageEdit_)
+	(Code Snippet - _GettingStartedWindowsAzureStorage - Ex3-TableStorageEdit_)
 
 	````C#
 	public ActionResult Edit(string id)
@@ -578,9 +578,9 @@ In this task you will update the MVC application actions to perform operations a
 	}
 	````
 
-1.	Replace the **Edit** _POST_ action with the following code to update an existing entity in the Table Storage.
+1.	Replace the **Edit** _POST_ action with the following code to update an existing entity in the table storage.
 
-	(Code Snippet - _Ex3-TableStoragePostEdit_)
+	(Code Snippet - _GettingStartedWindowsAzureStorage - Ex3-TableStoragePostEdit_)
 
 	````C#
 	[HttpPost]
@@ -603,9 +603,9 @@ In this task you will update the MVC application actions to perform operations a
 	}
 	````
 
-1.	Replace the **Delete** _GET_ Action with the following code to retrieve existing entity data from the Table Storage.
+1.	Replace the **Delete** _GET_ Action with the following code to retrieve existing entity data from the table storage.
 
-	(Code Snippet - _Ex3-TableStorageDelete_)
+	(Code Snippet - _GettingStartedWindowsAzureStorage - Ex3-TableStorageDelete_)
 
 	````C#
 	public ActionResult Delete(string id)
@@ -625,10 +625,10 @@ In this task you will update the MVC application actions to perform operations a
 	}
 	````
 
-1.	Replace the **DeleteConfirmed** Action with the following code to delete an existing entity from the table.
+1.	Replace the **DeleteConfirmed** action with the following code to delete an existing entity from the table.
 
-	(Code Snippet - _Ex3-TableStoragePostDelete_)
-
+	(Code Snippet - _GettingStartedWindowsAzureStorage - Ex3-TableStoragePostDelete_)
+	
 	````C#
 	[HttpPost, ActionName("Delete")]
 	[ValidateAntiForgeryToken]
@@ -644,7 +644,7 @@ In this task you will update the MVC application actions to perform operations a
 	}
 	````
 
-1. In order to be able to work with Table Storage, we first need to have the Table created. Data tables should only be created once. Typically, you would do this during a provisioning step and rarely in application code. The **Application_Start** method in the Global class is a recommended place for this initialization logic. To do so, open **Global.asax.cs** and add the following directives.
+1. In order to be able to work with table storage, we first need to have the table created. Data tables should only be created once. Typically, you would do this during a provisioning step and rarely in application code. The **Application_Start** method in the **Global.asax** class is a recommended place for this initialization logic. To do so, open **Global.asax.cs** and add the following using directives.
 
 	````C#
 	using Microsoft.WindowsAzure;
@@ -654,7 +654,8 @@ In this task you will update the MVC application actions to perform operations a
 
 1. Add the following code at the end of the **Application_Start** method.
 
-	(Code Snippet - _Ex3-TableStorageAppStart_)
+	(Code Snippet - _GettingStartedWindowsAzureStorage - Ex3-TableStorageAppStart_)
+
 	<!-- mark:10-13 -->
 	````C#
 	protected void Application_Start()
@@ -687,13 +688,14 @@ In this task you will update the MVC application actions to perform operations a
 
 	_Create Image Form_
 
-	>**NOTE**: You can ignore the Upload file input in this exercise.
+	> **Note**: You can ignore the Upload file input in this exercise.
 
+1. Close the browser to stop the application.
 
 <a name="Ex3Task3" />
 #### Task 3 - Working with Blobs ####
 
-In this task you will configure the MVC Application to upload images to Blob Storage. 
+In this task you will configure the MVC application to upload images to Blob Storage. 
 
 1.	Open **HomeController.cs** and add the following directives to work with Blobs.
 
@@ -701,10 +703,10 @@ In this task you will configure the MVC Application to upload images to Blob Sto
 	using Microsoft.WindowsAzure.Storage.Blob;
 	````
 
-1. Add the following helper method that allows you to retrieve the Blob container from the Storage Account that will be used to store the images.
+1. Add the following helper method at the end of the class that allows you to retrieve the blob container from the storage account that will be used to store the images.
 
-	(Code Snippet - _Ex3-BlobHelper_)
-
+	(Code Snippet - _GettingStartedWindowsAzureStorage - Ex3-BlobHelper_)
+	
 	````C#
 	private CloudBlobContainer GetBlobContainer()
 	{
@@ -719,9 +721,10 @@ In this task you will configure the MVC Application to upload images to Blob Sto
 	}
 	````
 
-1.	Now, you will update the **Create** Action of the **HomeController** to upload an image to a Blob. You will save the Blob Reference name in the Table to get a reference to it in a future. To do this, add the following code in the **Create** _POST_ action method.
+1.	Now, you will update the **Create** action of the **HomeController** to upload an image to a blob. You will save the blob reference name in the table to reference it in the future. To do this, add the following code in the **Create** _POST_ action method.
 
-	(Code Snippet - _Ex3-BlobCreate_)
+	(Code Snippet - _GettingStartedWindowsAzureStorage - Ex3-BlobCreate_)
+
 	<!-- mark:8-20 -->
 	````C#
 	[HttpPost]
@@ -753,9 +756,10 @@ In this task you will configure the MVC Application to upload images to Blob Sto
 	}
 	````
 
-1.	In the **Details** Action, you will need to display the image that was stored in the Blob container. To do this, you need to retrieve the URL using the **Blob Reference** name that was saved when creating a new entity. Add the following code.
+1.	In the **Details** action, you will need to display the image that was stored in the blob container. To do this, you need to retrieve the URL using the **Blob Reference** name that was saved when creating a new entity. Add the following code.
 
-	(Code Snippet - _Ex3-BlobDetails_)
+	(Code Snippet - _GettingStartedWindowsAzureStorage - Ex3-BlobDetails_)
+
 	<!-- mark:6-9 -->
 	````C#
 	public ActionResult Details(string id)
@@ -774,7 +778,7 @@ In this task you will configure the MVC Application to upload images to Blob Sto
 
 1.	Add the same line of code for the **Edit** _GET_ Action to get the image when editing.
 
-	(Code Snippet - _Ex3-BlobEdit_)
+	(Code Snippet - _GettingStartedWindowsAzureStorage - Ex3-BlobEdit_)
 	<!-- mark:6-9 -->
 	````C#
 	public ActionResult Edit(string id)
@@ -793,7 +797,8 @@ In this task you will configure the MVC Application to upload images to Blob Sto
 
 1. Add the same code line for the **Delete** _GET_ Action to get the image when deleting.
 
-	(Code Snippet - _Ex3-BlobDelete_)
+	(Code Snippet - _GettingStartedWindowsAzureStorage - Ex3-BlobDelete_)
+
 	<!-- mark:6-9 -->
 	````C#
 	public ActionResult Delete(string id)
@@ -810,9 +815,9 @@ In this task you will configure the MVC Application to upload images to Blob Sto
 	}	
 	````
 	
-1.	To delete the Blob from the Container, you will use the Blob Reference name to retrieve the Container and perform a Delete operation to it. To do this, add the following code to the **DeleteConfirmed** Action.
+1.	To delete the blob from the container, you will use the blob reference name to retrieve the container and perform a _delete_ operation to it. To do this, add the following code to the **DeleteConfirmed** action.
 
-	(Code Snippet - _Ex3-BlobPostDelete_)
+	(Code Snippet - _GettingStartedWindowsAzureStorage - Ex3-BlobPostDelete_)
 
 	<!-- mark:8-13 -->
 	````C#
@@ -834,9 +839,9 @@ In this task you will configure the MVC Application to upload images to Blob Sto
 	}
 	````
 
-1.	Press **F5** and run the application.
+1.	Press **F5** to run the application.
 
-1. Click **Create** and upload an image.
+1. Browse for an image, insert a title and a description for it and then click **Create** to perform the upload.
 
 	![Upload image](Images/upload-image.png?raw=true "Upload image")
 
@@ -844,12 +849,12 @@ In this task you will configure the MVC Application to upload images to Blob Sto
 
 	> **Note:** You can use one of the images that are included in this lab, under the **Assets** folder.
 
-1. Go to the **Details** page and see the image uploaded.
+1. Go to the **Details** page and see the image uploaded successfully and then close the browser.
 
 <a name="Ex3Task4" />
 #### Task 4 - Working with Queues ####
 
-In this task, you will use Queues to simulate a Notification service, where a Message is sent to a Worker role for processing.
+In this task, you will use queues to simulate a notification service, where a message is sent to a worker role for processing.
 
 1.	Open **HomeController.cs** and add the following directive.
 
@@ -857,9 +862,9 @@ In this task, you will use Queues to simulate a Notification service, where a Me
 	using Microsoft.WindowsAzure.Storage.Queue;
 	````
 
-1.	You will add the following helper method at the end of the class, to retrieve the **Cloud Queue** object.
+1.	You will add the following helper method at the end of the class to retrieve the **Cloud Queue** object.
 
-	(Code Snippet - _Ex3-QueueHelper_)
+	(Code Snippet - _GettingStartedWindowsAzureStorage - Ex3-QueueHelper_)
 
 	````C#
 	private CloudQueue GetCloudQueue()
@@ -871,9 +876,9 @@ In this task, you will use Queues to simulate a Notification service, where a Me
 	}
 	````
 
-1.	To notify when a new Photo was uploaded you must insert a message to the **Queue** with the specific message. Add the following highlighted code in the **Create** _POST_ Action method.
+1.	To notify when a new photo is uploaded, you must insert a message to the **Queue** with the specific text to display. Add the following highlighted code in the **Create** _POST_ action method.
 
-	(Code Snippet - _Ex3-QueueSendMessageCreate_)
+	(Code Snippet - _GettingStartedWindowsAzureStorage - Ex3-QueueSendMessageCreate_)
 
 	<!-- mark:9-11 -->
 	````C#
@@ -896,9 +901,9 @@ In this task, you will use Queues to simulate a Notification service, where a Me
 	}	
 	````
 
-1.	To notify that a Photo was deleted, you will insert a message to the **Queue** with the specific message. Add the following highlighted code to the **DeleteConfirmed** Action method.
+1.	To notify that a photo was deleted, you will insert a message to the **Queue** with the specific text to display. Add the following highlighted code to the **DeleteConfirmed** action method.
 
-	(Code Snippet - _Ex3-QueueSendMessageDelete_)
+	(Code Snippet - _GettingStartedWindowsAzureStorage - Ex3-QueueSendMessageDelete_)
 
 	<!-- mark:7-9 -->
 	````C#
@@ -918,9 +923,10 @@ In this task, you will use Queues to simulate a Notification service, where a Me
 
 1. Open the **WorkerRole.cs** file located in the **QueueProcessor_WorkerRole** project.
 
-1. The Worker Role will read the **Queue** for notification messages. First, you need to get a Queue reference. To do this following highlighted code.
+1. The worker role will read the **Queue** for notification messages. First, you need to get a queue reference. To do this, add following highlighted code in the **Run** method.
 
-	(Code Snippet - _Ex3-QueueWorkerAccount_)
+	(Code Snippet - _GettingStartedWindowsAzureStorage - Ex3-QueueWorkerAccount)
+
 	<!-- mark:6-11 -->
 	````C#
 	public override void Run()
@@ -943,9 +949,10 @@ In this task, you will use Queues to simulate a Notification service, where a Me
 	}
 	````
 
-1. Now, add the following code inside the **While** block to read messages from the Queue.
+1. Now, add the following code inside the **while** block to read messages from the queue.
 
-	(Code Snippet - _Ex3-QueueReadingMessages_)
+	(Code Snippet - _GettingStartedWindowsAzureStorage - Ex3-QueueReadingMessages_)
+
 	<!-- mark:9-18 -->
 	````C#
 	public override void Run()
@@ -972,15 +979,15 @@ In this task, you will use Queues to simulate a Notification service, where a Me
 
 	> **Note:** The worker process will try to get a message from the queue every 10 seconds using the **GetMessage** method. If there are messages in the queue, it will show them in the Compute Emulator log.
 
-1. Press **F5** to run the application and upload a new image.
+1. Press **F5** to run the application. Once the browser is opened, upload a new image.
 
-1. Open the Compute Emulator. To do so, right click in the Windows Azure tray icon and select 
+1. Open the **Compute Emulator**. To do so, right-click the Windows Azure icon tray and select **Show Compute Emulator UI**.
 
 	![Windows Azure Tray Icon](Images/windows-azure-tray-icon.png?raw=true "Windows Azure Tray Icon")
 
 	_Windows Azure Tray Icon_
 
-1. Select the Worker Role instance. Wait until the process reads the message from the queue.
+1. Select the worker role instance. Wait until the process reads the message from the queue.
 
 	![Worker role processing the queue](Images/worker-role-processing-the-queue.png?raw=true "Worker role processing the queue")
 
@@ -989,47 +996,45 @@ In this task, you will use Queues to simulate a Notification service, where a Me
 <a name="Ex3Task5" />
 #### Task 5 - Verification with Visual Studio####
 
-In this task, you will use Visual Studio to inspect Windows Azure Storage Account.
+In this task, you will use Visual Studio to inspect the Windows Azure Storage Account.
 
-1. If not already opened, open Visual Studio.
+1. If not already opened, open **Visual Studio Express 2012 for Web**.
 
-1. Go to **VIEW** menu, and open **Database Explorer**.
+1. Go to **View** menu, and open **Database Explorer**.
 
-1. In the Server Explorer pane, right click in **Windows Azure Storage** and select **Add New Storage Account**.
+1. In the Database Explorer pane, right-click **Windows Azure Storage** and select **Add New Storage Account**.
 
 	![Database Explorer](Images/database-explorer.png?raw=true "Database Explorer")
 
 	_Database Explorer_
 
-1. Select **Manually entered credentials** and complete the **Account name** and **Account key** fields with the keys of the storage account you've created in Exercise 1.
-
-1. Click **OK**.
-
-1. Expand the Storage Account you configured in the Server explorer
+1. Select **Manually entered credentials** and complete the **Account name** and **Account key** fields with the keys of the storage account you've created in Exercise 1. Click **OK**.
 
 	![Add New Storage Account](Images/add-new-storage-account.png?raw=true "Add New Storage Account")
 
 	_Add New Storage Account_
 
-	>**NOTE**: You'll notice that there is an enrty for Tables, Blobs and Queeus
+1. Expand the storage account you configured in the Server Explorer. Notice that there is an entry for Tables, Blobs and Queues.
 
-1. Expand the Tables container. You will see the **Photos** Table inside table container
+1. Expand the **Tables** container. You will see the **Photos** table inside it.
 
-1. Right click in **Photos** table and select **View Table**
+	![Photos Table in Database Explorer](Images/photos-table-in-database-explorer.png?raw=true "Photos Table in Database Explorer")
+
+	_Photos Table in Database Explorer_
+
+1. Right-click the **Photos** table and select **View Table**.
 
 	![Photos Table](Images/photo-table.png?raw=true "Photos Table")
 
 	_Photos Table_
 
-	>**NOTE**: You can see the data you've created in the previous task. Notice the blob reference column. This column references the name of a blob storage.
+	> **Note**: You can see the data you've created in the previous task. Notice the blob reference column. This column references the name of a blob storage.
 
-1. Expand the Blobs container. Right click in gallery blob and **View Blob Contaienr** 
+1. Expand the **Blobs** container. Right-click the gallery blob and select **View Blob Container**. 
 
 	![Gallery Blob Container](Images/blob-container.png?raw=true "Gallery Blob Container")
 
 	_Gallery Blob Container_
-
-
 
 ---
 
