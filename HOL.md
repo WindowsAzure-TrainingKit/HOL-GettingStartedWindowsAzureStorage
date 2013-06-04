@@ -1038,6 +1038,36 @@ In this task, you will use Visual Studio to inspect the Windows Azure Storage Ac
 
 ---
 
+<a name="Exercise4" />
+### Exercise 4: Introducing SAS (Shared Access Signature) ###
+
+Shared Access Signatures allow granular access to tables, queues, blob containers, and blobs. A SAS token can be configured to provide specific access rights, such as read, write, update, delete, etc. to a specific table, key range within a table, queue, blob, or blob container; for a specified time period or without any limit. The SAS token appears as part of the resource’s URI as a series of query parameters.
+
+In this exercise you will learn how to use Shared Access Signatures with the three storage abstractions: Tables, Blobs, and Queues.
+
+<a name="Ex4Task1" />
+#### Task 1 - Adding SAS at table level  ####
+
+In this task you will learn how to create SAS for Azure tables. SAS for table allows owners to grant SAS token access by restricting the operations in several ways.
+
+You can grant access to an entire table, to a table range (for example, to all the rows under a particular partion key), or some specific rows. Additionally, you can grant access rights to the specified table or table range such as _Query_, _Add_, _Update_, _Delete_ or a combination of them. Finally, you can specify the SAS token access time.
+
+1. First Step.
+
+<a name="Ex4Task2" />
+#### Task 2 - Adding SAS at Blob level  ####
+
+In this task you will learn how to create SAS for Azure Blobs. SAS can be created for blobs and for blobs containers. SAS tokens can be used on blogs to read, update and delete the specified blob. Regarding blob containers, SAS tokens can be used to list the content of the container, and to create, read, update and delete blobs in it.
+
+1. First Step.
+
+<a name="Ex4Task3" />
+#### Task 3 - Adding SAS at Queue level  ####
+
+1. First Step.
+
+---
+
 <a name="summary" />
 ## Summary ##
 
