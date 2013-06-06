@@ -71,6 +71,7 @@ This hands-on lab includes the following exercises:
 1.	[Exercise 1 - Creating a Windows Azure Storage Account](#Exercise1)
 2.	[Exercise 2 - Managing a Windows Azure Storage Account](#Exercise2)
 1.	[Exercise 3 - Understanding the Windows Azure Storage Abstractions](#Exercise3)
+1.	[Exercise 4 - Introducing SAS (Shared Access Signature)](#Exercise4)
 
 > **Note:** Each exercise is accompanied by a starting solution. These solutions are missing some code sections that are completed through each exercise and therefore will not necessarily work if running them directly.
 Inside each exercise you will also find an end folder where you find the resulting solution you should obtain after completing the exercises. You can use this solution as a guide if you need additional help working through the exercises.
@@ -1052,17 +1053,240 @@ In this task you will learn how to create SAS for Azure tables. SAS for table al
 
 You can grant access to an entire table, to a table range (for example, to all the rows under a particular partion key), or some specific rows. Additionally, you can grant access rights to the specified table or table range such as _Query_, _Add_, _Update_, _Delete_ or a combination of them. Finally, you can specify the SAS token access time.
 
-1. First Step.
+1. Continue working with the end solution of the previous exercise or open the solution located at _Source/Ex04-IntroducingSAS/Begin_.
+
+1. Open the **PhotoEntity** class, located in the _Models_ folder.
+
+1. Modify the default constructor to use _"Public"_ as the partiton key by default, and add an overloaded constructor that receives a partition key as a parameter.
+
+	<!-- mark:5, 9-13 -->
+	````C#
+	public class PhotoEntity : TableEntity
+	{
+		public PhotoEntity() 
+		{
+			PartitionKey = "Public";
+			RowKey = Guid.NewGuid().ToString();
+		}
+
+		public PhotoEntity(string partitionKey)
+		{
+			PartitionKey = partitionKey;
+			RowKey = Guid.NewGuid().ToString();
+		}
+		
+		...
+	}
+	````
+
+1. Open the _PhotoDataServiceContext.cs_ file and locate the **GetSas** method. Paste the following code in the method's body.
+
+	<!-- mark:3-17 -->
+	````C#
+	public string GetSas(string partition, SharedAccessTablePermissions permissions)
+	{
+		SharedAccessTablePolicy policy = new SharedAccessTablePolicy()
+		{
+			SharedAccessExpiryTime = DateTime.UtcNow.AddMinutes(15),
+			Permissions = permissions
+		};
+
+		string sasToken = this.ServiceClient.GetTableReference("Photos").GetSharedAccessSignature(
+			policy   /* access policy */,
+			null     /* access policy identifier */,
+			partition /* start partition key */,
+			null     /* start row key */,
+			partition /* end partition key */,
+			null     /* end row key */);
+
+		return sasToken;
+	}
+	````
+This method takes the partition and the permissions passed as parameters and creates a SAS for the _Photos_ table. This SAS will grant the specified permissions only to the rows that correspond to that partition. Finally, it returns the SAS in string format.
+
+1. Open the _AccountController.cs_ file, located in the _Controllers_ folder.
+
+1. Go to the Post version of the **Login** method, and add the following code.
+
+	<!-- mark:8-12 -->
+	````C#
+	[HttpPost]
+	[AllowAnonymous]
+	[ValidateAntiForgeryToken]
+	public ActionResult Login(LoginModel model, string returnUrl)
+	{
+		if (ModelState.IsValid && WebSecurity.Login(model.UserName, model.Password, persistCookie: model.RememberMe))
+		{
+			CloudTableClient cloudTableClientAdmin = this.StorageAccount.CreateCloudTableClient();
+			var photoContextAdmin = new PhotoDataServiceContext(cloudTableClientAdmin);
+			Session["MySas"] = photoContextAdmin.GetSas(model.UserName, SharedAccessTablePermissions.Add | SharedAccessTablePermissions.Delete | SharedAccessTablePermissions.Query | SharedAccessTablePermissions.Update);
+			Session["Sas"] = photoContextAdmin.GetSas("Public", SharedAccessTablePermissions.Add | SharedAccessTablePermissions.Delete | SharedAccessTablePermissions.Query | SharedAccessTablePermissions.Update);
+			Session["ExpireTime"] = DateTime.UtcNow.AddMinutes(15);
+			return RedirectToLocal(returnUrl);
+		}
+
+		// If we got this far, something failed, redisplay form
+		ModelState.AddModelError("", "The user name or password provided is incorrect.");
+		return View(model);
+	}
+	````
+
+	The preceding code uses the **PhotoDataServiceContext** class to generate two SAS, one for accessing _Public_ rows, and the other for accessings the rows that correspond to the logged user. Additionally, the _ExpireTime_ of the tokens is saved too.
+
+	> **Note:** The public and private tokens, as well as their expiration time are saved as Session variables, that live only for the current application session.
+
+1. Go to the **Register** method and update the code as shown in the following snippet.
+
+	<!-- mark:13-17 -->
+	````C#
+	[HttpPost]
+	[AllowAnonymous]
+	[ValidateAntiForgeryToken]
+	public ActionResult Register(RegisterModel model)
+	{
+		if (ModelState.IsValid)
+		{
+			// Attempt to register the user
+			try
+			{
+				WebSecurity.CreateUserAndAccount(model.UserName, model.Password);
+				WebSecurity.Login(model.UserName, model.Password);
+				CloudTableClient cloudTableClientAdmin = this.StorageAccount.CreateCloudTableClient();
+				var photoContextAdmin = new PhotoDataServiceContext(cloudTableClientAdmin);
+				Session["MySas"] = photoContextAdmin.GetSas(model.UserName, SharedAccessTablePermissions.Add | SharedAccessTablePermissions.Delete | SharedAccessTablePermissions.Query | SharedAccessTablePermissions.Update);
+				Session["Sas"] = photoContextAdmin.GetSas("Public", SharedAccessTablePermissions.Add | SharedAccessTablePermissions.Delete | SharedAccessTablePermissions.Query | SharedAccessTablePermissions.Update);
+				Session["ExpireTime"] = DateTime.UtcNow.AddMinutes(15);
+				return RedirectToAction("Index", "Home");
+			}
+			catch (MembershipCreateUserException e)
+			{
+			ModelState.AddModelError("", ErrorCodeToString(e.StatusCode));
+			}
+		}
+
+		// If we got this far, something failed, redisplay form
+		return View(model);
+	}
+	````
+
+1. Finally, to complEte the changes in the **AccountController**, update the **LogOff** method to clear the private SAS and expiration time, as shown in the following code.
+
+	<!-- mark:7-8 -->
+	````C#
+	[HttpPost]
+	[ValidateAntiForgeryToken]
+	public ActionResult LogOff()
+	{
+		WebSecurity.Logout();
+
+		Session["ExpireTime"] = null;
+		Session["MySas"] = null;
+
+		return RedirectToAction("Index", "Home");
+	}
+	````
+
+1. Open the **HomeController** class, located in the _Controllers_ folder.
+
 
 <a name="Ex4Task2" />
 #### Task 2 - Adding SAS at Blob level  ####
 
 In this task you will learn how to create SAS for Azure Blobs. SAS can be created for blobs and for blobs containers. SAS tokens can be used on blogs to read, update and delete the specified blob. Regarding blob containers, SAS tokens can be used to list the content of the container, and to create, read, update and delete blobs in it.
 
-1. First Step.
+1. Open the _PhotoDataServiceContext.cs_ file and locate the **GetSasForBlob** method. Paste the following code in the method's body.
+
+	<!-- mark:3-9 -->
+	````C#
+	public string GetSaSForBlob(CloudBlockBlob blob, SharedAccessBlobPermissions permission)
+   {
+		var sas = blob.GetSharedAccessSignature(new SharedAccessBlobPolicy()
+			{
+				Permissions = permission,
+                SharedAccessStartTime = DateTime.UtcNow.AddMinutes(-5),
+				SharedAccessExpiryTime = DateTime.UtcNow.AddMinutes(2),
+			});
+		return string.Format(CultureInfo.InvariantCulture, "{0}{1}", blob.Uri, sas);
+	}
+	````
+This method takes a block blob reference and creates a Blob SAS for it, with the permissions passed as parameters. Finally, it returns the SAS in string format.
+
+1. Open the _Index.cshtml_ located in the _Views\Home_ folder, and add the following code, that adds the share link to private blobs, at the end of the **else** statement.
+
+	<!-- mark:11 -->
+	````HTML
+		@if (photo.PartitionKey == "Public")
+		{
+			if (this.User.Identity.IsAuthenticated)
+			{
+				<td>@Html.ActionLink("To Private", "ToPrivate", new { partitionKey = photo.PartitionKey, rowKey = photo.RowKey })</td>
+			}
+		}
+		else
+		{
+			<td>@Html.ActionLink("To Public", "ToPublic", new { partitionKey = photo.PartitionKey, rowKey = photo.RowKey })</td>
+			<td>@Html.ActionLink("Share", "Share", new { partitionKey = photo.PartitionKey, rowKey = photo.RowKey })</td>
+		}
+	````
+
+	Notice that the **ActionLink** is calling the Share action passing the partition and row keys as parameters.
+
+1. Open the _HomeController.cs_ file, located in the _Controllers_ folder.
+
+1. Paste the following code inside the **Share** method.
+
+	<!-- mark:4-29 -->
+	````C#
+	[HttpGet]
+	public ActionResult Share(string partitionKey, string rowKey)
+	{
+		this.RefreshAccessCredentials();
+
+		PhotoEntity photo;
+
+		var cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(Session["MySas"].ToString()));
+		var photoContext = new PhotoDataServiceContext(cloudTableClient);
+
+		photo = photoContext.GetById(partitionKey, rowKey);
+		if (photo == null)
+		{
+			return this.HttpNotFound();
+		}
+
+		string sas = string.Empty;
+		if (!string.IsNullOrEmpty(photo.BlobReference))
+		{
+			CloudBlockBlob blobBlockReference = this.GetBlobContainer().GetBlockBlobReference(photo.BlobReference);
+			sas = photoContext.GetSasForBlob(blobBlockReference, SharedAccessBlobPermissions.Read);
+		}
+
+		if (!string.IsNullOrEmpty(sas))
+		{
+			return View("Share", null, sas);
+		}
+
+		return RedirectToAction("Index");
+	}	
+	````
+	The preceding code gets the blob reference by using the partition and row keys, and calls the **GetSasForBlob** method passing the reference and the permissions as parameters. In this case, the SAS is created with **Read** permissions.
+
+1. Run the solution by pressing **F5**.
+
+1. Log into the application. If you do not have an user, register to create one.
+
+1. If you previously uploaded some images using the account you used for login you can use them, otherwise, upload an image using the logged account.
+
+1. Click the **Share** link, next to one of the uploaded photos. You will navigate to the _Share_ page.
+
+1. Copy the provided link, and open it in your browser. You will be able to see the image from your browser.
+
+1. Wait two minutes (time it takes for this SAS token to expire) and press **Ctrl+F5**, as the token is no longer valid, you will not be able to see the image and an error will be displayed.
+
+
 
 <a name="Ex4Task3" />
 #### Task 3 - Adding SAS at Queue level  ####
+In this task you will uses SAS at queue level to restrict access to the storage queues. SAS can enable Read, Add, Process, and Update permissions on the queue.
 
 1. First Step.
 
