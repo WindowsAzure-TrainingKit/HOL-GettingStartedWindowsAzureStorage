@@ -45,7 +45,7 @@
       <RoleName>PhotoUploader_WebRole</RoleName>
       <UpdateDiagnosticsConnectionStringOnPublish>True</UpdateDiagnosticsConnectionStringOnPublish>
     </ProjectReference>
-    <ProjectReference Include="..\PhotoUploader_WorkerRole\QueueProcessor_WorkerRole.csproj">
+    <ProjectReference Include="..\QueueProcessor_WorkerRole\QueueProcessor_WorkerRole.csproj">
       <Name>QueueProcessor_WorkerRole</Name>
       <Project>{a78d52a8-ffc3-49ea-9b4f-0da9d90a2967}</Project>
       <Private>True</Private>
