@@ -5,7 +5,7 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{87BBF9A5-C6CE-424C-A299-5BA1470FBE96}</ProjectGuid>
+    <ProjectGuid>{20F12553-9BEC-4A87-8301-3686849F05A4}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>QueueProcessor_WorkerRole</RootNamespace>

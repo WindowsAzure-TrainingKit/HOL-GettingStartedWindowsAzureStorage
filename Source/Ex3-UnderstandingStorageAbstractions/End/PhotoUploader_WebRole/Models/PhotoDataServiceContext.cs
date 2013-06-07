@@ -20,10 +20,10 @@ namespace PhotoUploader_WebRole.Models
             return this.CreateQuery<PhotoEntity>("Photos");
         }
 
-        public PhotoEntity GetById(string rowKey)
+        public PhotoEntity GetById(string partitionKey, string rowKey)
         {
             CloudTable table = this.ServiceClient.GetTableReference("Photos");
-            TableOperation retrieveOperation = TableOperation.Retrieve<PhotoEntity>("Photo", rowKey);
+            TableOperation retrieveOperation = TableOperation.Retrieve<PhotoEntity>(partitionKey, rowKey);
 
             TableResult retrievedResult = table.Execute(retrieveOperation);
 
