@@ -40,6 +40,10 @@ namespace PhotoUploader_WebRole.Controllers
                 var photoContextAdmin = new PhotoDataServiceContext(cloudTableClientAdmin);
                 Session["MySas"] = photoContextAdmin.GetSas(model.UserName, SharedAccessTablePermissions.Add | SharedAccessTablePermissions.Delete | SharedAccessTablePermissions.Query | SharedAccessTablePermissions.Update);
                 Session["Sas"] = photoContextAdmin.GetSas("Public", SharedAccessTablePermissions.Add | SharedAccessTablePermissions.Delete | SharedAccessTablePermissions.Query | SharedAccessTablePermissions.Update);
+                Session["QueueSas"] = this.StorageAccount.CreateCloudQueueClient().GetQueueReference("messagequeue").GetSharedAccessSignature(
+                        new SharedAccessQueuePolicy() { Permissions = SharedAccessQueuePermissions.Add | SharedAccessQueuePermissions.Read, SharedAccessExpiryTime = DateTime.UtcNow.AddMinutes(15) },
+                        null
+                        );
                 Session["ExpireTime"] = DateTime.UtcNow.AddMinutes(15);
                 return RedirectToLocal(returnUrl);
             }
@@ -58,8 +62,10 @@ namespace PhotoUploader_WebRole.Controllers
         {
             WebSecurity.Logout();
 
-            Session["ExpireTime"] = null;
+            Session["ExpireTime"]= null;
+            Session["QueueSas"] = null;
             Session["MySas"] = null;
+            Session["Sas"] = null;
 
             return RedirectToAction("Index", "Home");
         }
@@ -92,6 +98,10 @@ namespace PhotoUploader_WebRole.Controllers
                     var photoContextAdmin = new PhotoDataServiceContext(cloudTableClientAdmin);
                     Session["MySas"] = photoContextAdmin.GetSas(model.UserName, SharedAccessTablePermissions.Add | SharedAccessTablePermissions.Delete | SharedAccessTablePermissions.Query | SharedAccessTablePermissions.Update);
                     Session["Sas"] = photoContextAdmin.GetSas("Public", SharedAccessTablePermissions.Add | SharedAccessTablePermissions.Delete | SharedAccessTablePermissions.Query | SharedAccessTablePermissions.Update);
+                    Session["QueueSas"] = this.StorageAccount.CreateCloudQueueClient().GetQueueReference("messagequeue").GetSharedAccessSignature(
+                        new SharedAccessQueuePolicy() { Permissions = SharedAccessQueuePermissions.Add | SharedAccessQueuePermissions.Read, SharedAccessExpiryTime = DateTime.UtcNow.AddMinutes(15) },
+                        null
+                        );
                     Session["ExpireTime"] = DateTime.UtcNow.AddMinutes(15);
                     return RedirectToAction("Index", "Home");
                 }
