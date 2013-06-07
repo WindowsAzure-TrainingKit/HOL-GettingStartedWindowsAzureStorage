@@ -1,4 +1,5 @@
 ﻿using Microsoft.WindowsAzure;
+using Microsoft.WindowsAzure.Diagnostics;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Blob;
 using Microsoft.WindowsAzure.Storage.Queue;
@@ -52,6 +53,8 @@ namespace PhotoUploader_WebRole
             queue.SetMetadata();
 
             CloudBlobContainer blob = storageAccount.CreateCloudBlobClient().GetContainerReference(CloudConfigurationManager.GetSetting("ContainerName"));
+            blob.CreateIfNotExists();
+            blob.SetPermissions(new BlobContainerPermissions { PublicAccess = BlobContainerPublicAccessType.Blob });
             BlobContainerPermissions bp = new BlobContainerPermissions();
             bp.SharedAccessPolicies.Add("read", new SharedAccessBlobPolicy { Permissions = SharedAccessBlobPermissions.Read, SharedAccessExpiryTime = DateTime.UtcNow.AddMinutes(15) });
             blob.SetPermissions(bp);

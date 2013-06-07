@@ -41,6 +41,10 @@ namespace PhotoUploader_WebRole.Controllers
                 Session["MySas"] = photoContextAdmin.GetSas(model.UserName, "admin");
                 Session["Sas"] = photoContextAdmin.GetSas("Public", "admin");
                 Session["ExpireTime"] = DateTime.UtcNow.AddMinutes(15);
+                Session["QueueSas"] = this.StorageAccount.CreateCloudQueueClient().GetQueueReference("messagequeue").GetSharedAccessSignature(
+                        new SharedAccessQueuePolicy(),
+                        "add"
+                        );
                 return RedirectToLocal(returnUrl);
             }
 
@@ -59,6 +63,7 @@ namespace PhotoUploader_WebRole.Controllers
             WebSecurity.Logout();
 
             Session["ExpireTime"] = null;
+            Session["QueueSas"] = null;
             Session["MySas"] = null;
 
             return RedirectToAction("Index", "Home");
@@ -93,6 +98,10 @@ namespace PhotoUploader_WebRole.Controllers
                     Session["MySas"] = photoContextAdmin.GetSas(model.UserName, "admin");
                     Session["Sas"] = photoContextAdmin.GetSas("Public", "admin");
                     Session["ExpireTime"] = DateTime.UtcNow.AddMinutes(15);
+                    Session["QueueSas"] = this.StorageAccount.CreateCloudQueueClient().GetQueueReference("messagequeue").GetSharedAccessSignature(
+                        new SharedAccessQueuePolicy(),
+                        "add"
+                        );
                     return RedirectToAction("Index", "Home");
                 }
                 catch (MembershipCreateUserException e)

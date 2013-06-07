@@ -1,15 +1,17 @@
 ﻿using Microsoft.WindowsAzure;
+using Microsoft.WindowsAzure.Diagnostics;
+using Microsoft.WindowsAzure.ServiceRuntime;
 using Microsoft.WindowsAzure.Storage;
+using Microsoft.WindowsAzure.Storage.Auth;
+using Microsoft.WindowsAzure.Storage.Blob;
+using Microsoft.WindowsAzure.Storage.Queue;
 using Microsoft.WindowsAzure.Storage.Table;
 using PhotoUploader_WebRole.Models;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Web;
 using System.Web.Mvc;
-using System.Linq;
-using Microsoft.WindowsAzure.Storage.Blob;
-using Microsoft.WindowsAzure.Storage.Queue;
-using Microsoft.WindowsAzure.Storage.Auth;
-using System.Collections.Generic;
 
 namespace PhotoUploader_WebRole.Controllers
 {
@@ -129,9 +131,6 @@ namespace PhotoUploader_WebRole.Controllers
                         blob.Metadata.Add("Height", image.Height.ToString());
                     }
 
-                    blob.SetMetadata();
-                    blob.SetProperties();
-
                     blob.UploadFromStream(file.InputStream);
                     photo.BlobReference = file.FileName;
                 }
@@ -155,8 +154,15 @@ namespace PhotoUploader_WebRole.Controllers
                 photoContext.AddPhoto(photo);
 
                 //Send create notification
-                var msg = new CloudQueueMessage(string.Format("Photo Uploaded,{0}", photo.BlobReference));
-                this.GetCloudQueue().AddMessage(msg);
+                try
+                {
+                    var msg = new CloudQueueMessage(string.Format("Photo Uploaded,{0}", photo.BlobReference));
+                    this.GetCloudQueue().AddMessage(msg);
+                }
+                catch (Exception e)
+                {
+                    System.Diagnostics.Trace.TraceError("Invalid SAS for Queues", "Error");
+                }
 
                 return this.RedirectToAction("Index");
             }
@@ -274,8 +280,10 @@ namespace PhotoUploader_WebRole.Controllers
                 }
 
                 //Send delete notification
+
                 var msg = new CloudQueueMessage(string.Format("Photo Deleted,{0}", photo.BlobReference));
                 this.GetCloudQueue().AddMessage(msg);
+
             }
             return this.RedirectToAction("Index");
         }
@@ -381,11 +389,8 @@ namespace PhotoUploader_WebRole.Controllers
         {
             var client = this.StorageAccount.CreateCloudBlobClient();
             var container = client.GetContainerReference(CloudConfigurationManager.GetSetting("ContainerName"));
-            if (container.CreateIfNotExists())
-            {
-                container.SetPermissions(new BlobContainerPermissions { PublicAccess = BlobContainerPublicAccessType.Blob });
-            }
-
+            container.CreateIfNotExists();
+            container.SetPermissions(new BlobContainerPermissions { PublicAccess = BlobContainerPublicAccessType.Blob });
             return container;
         }
 
@@ -404,15 +409,15 @@ namespace PhotoUploader_WebRole.Controllers
                 var photoContextAdmin = new PhotoDataServiceContext(cloudTableClientAdmin);
 
                 Session["Sas"] = photoContextAdmin.GetSas("Public", "edit");
-                Session["QueueSas"] = this.StorageAccount.CreateCloudQueueClient().GetQueueReference("messagequeue").GetSharedAccessSignature(
-                        new SharedAccessQueuePolicy(),
-                        "add"
-                        );
 
                 if (this.User.Identity.IsAuthenticated)
                 {
                     Session["MySas"] = photoContextAdmin.GetSas(this.User.Identity.Name, "admin");
                     Session["Sas"] = photoContextAdmin.GetSas("Public", "admin");
+                    Session["QueueSas"] = this.StorageAccount.CreateCloudQueueClient().GetQueueReference("messagequeue").GetSharedAccessSignature(
+                        new SharedAccessQueuePolicy(),
+                        "add"
+                        );
                 }
 
                 Session["ExpireTime"] = DateTime.UtcNow.AddMinutes(15);
