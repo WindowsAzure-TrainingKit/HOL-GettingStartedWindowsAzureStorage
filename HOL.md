@@ -1169,7 +1169,7 @@ This method takes the partition and the permissions passed as parameters and cre
 	}
 	````
 
-1. Finally, to complEte the changes in the **AccountController**, update the **LogOff** method to clear the private SAS and expiration time, as shown in the following code.
+1. Finally, to complete the changes in the **AccountController** class, update the **LogOff** method to clear the private SAS and expiration time, as shown in the following code.
 
 	<!-- mark:7-8 -->
 	````C#
@@ -1188,6 +1188,168 @@ This method takes the partition and the permissions passed as parameters and cre
 
 1. Open the **HomeController** class, located in the _Controllers_ folder.
 
+1. Go to the **RefreshCredentials** method, and add the following code as the method's body.
+
+	<!-- mark:3-21 -->
+	````C#
+	public void RefreshAccessCredentials()
+	{
+		if ((Session["ExpireTime"] as DateTime? == null) || ((DateTime)Session["ExpireTime"] < DateTime.UtcNow))
+		{
+			CloudTableClient cloudTableClientAdmin = this.StorageAccount.CreateCloudTableClient();
+			var photoContextAdmin = new PhotoDataServiceContext(cloudTableClientAdmin);
+
+			Session["Sas"] = photoContextAdmin.GetSas("Public", SharedAccessTablePermissions.Add | SharedAccessTablePermissions.Update | SharedAccessTablePermissions.Query);
+			Session["QueueSas"] = this.StorageAccount.CreateCloudQueueClient().GetQueueReference("messagequeue").GetSharedAccessSignature(
+				new SharedAccessQueuePolicy() { Permissions = SharedAccessQueuePermissions.Add | SharedAccessQueuePermissions.Read, SharedAccessExpiryTime = DateTime.UtcNow.AddMinutes(15) },
+					null
+				);
+
+			if (this.User.Identity.IsAuthenticated)
+			{
+				Session["MySas"] = photoContextAdmin.GetSas(this.User.Identity.Name, SharedAccessTablePermissions.Add | SharedAccessTablePermissions.Delete | SharedAccessTablePermissions.Query | SharedAccessTablePermissions.Update);
+				Session["Sas"] = photoContextAdmin.GetSas("Public", SharedAccessTablePermissions.Add | SharedAccessTablePermissions.Delete | SharedAccessTablePermissions.Query | SharedAccessTablePermissions.Update);
+			}
+
+			Session["ExpireTime"] = DateTime.UtcNow.AddMinutes(15);
+		}
+	}
+	````
+	The preceding code checks if the stored expiration time is valid, and if not, it will generate a new valid SAS for public access, and if a user is logged in, for private access too.
+
+1. Since you need a valid token to perform every operation on this controller, add a call to the **RefreshAccessCredentials** method at the top of all the public actions of the **HomeController** class, even the ones that have empty bodies. This is shown in the following code.
+
+	<!-- mark:3 -->
+	````C#
+	public ActionResult Index()
+	{
+		this.RefreshAccessCredentials();
+
+		...
+
+	}
+	````
+
+	>**Note:** You have to add the call the **RefreshAccessCredentials** to the following methods of the **HomeController** class: _Index_, _Details_, _[Get] Create_, _[Post] Create_, _[Get] Edit_, _[Post] Edit_, _[Get] Delete_, _[Post] Delete_, _ToPrivate_, _ToPublic_, and _Share_.
+
+1. Go to the **ToPublic** method and add the following code in its body. This method will delete a private blob (one created with a username as the partition key) and it will re-create it with "Public" as the partition key.
+
+	<!-- mark:5-20 -->
+	````C#
+	[HttpGet]
+	public ActionResult ToPublic(string partitionKey, string rowKey)
+	{
+		this.RefreshAccessCredentials();
+		CloudTableClient cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(Session["MySas"].ToString()));
+		var photoContext = new PhotoDataServiceContext(cloudTableClient);
+		var photo = photoContext.GetById(partitionKey, rowKey);
+		if (photo == null)
+		{
+			return this.HttpNotFound();
+		}
+
+		photoContext.DeletePhoto(photo);
+
+		cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(Session["Sas"].ToString()));
+		photoContext = new PhotoDataServiceContext(cloudTableClient);
+		photo.PartitionKey = "Public";
+		photoContext.AddPhoto(photo);
+
+		return RedirectToAction("Index");
+	}
+	````
+
+1. Go to the **ToPrivate** method, and add the following code in the method's body. As opposite to the **ToPublic** method, this one will remove the photo's row from the _Public_ partition key and re-add it to the logged user partition. Therefore, this method needs a logged user to work.
+
+	<!-- mark:5-20 -->
+	````C#
+	[HttpGet]
+	public ActionResult ToPrivate(string partitionKey, string rowKey)
+	{
+		this.RefreshAccessCredentials();
+		CloudTableClient cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(Session["Sas"].ToString()));
+		var photoContext = new PhotoDataServiceContext(cloudTableClient);
+		var photo = photoContext.GetById(partitionKey, rowKey);
+		if (photo == null)
+		{
+			return this.HttpNotFound();
+		}
+
+		photoContext.DeletePhoto(photo);
+
+		cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(Session["MySas"].ToString()));
+		photoContext = new PhotoDataServiceContext(cloudTableClient);
+		photo.PartitionKey = this.User.Identity.Name;
+		photoContext.AddPhoto(photo);
+
+		return RedirectToAction("Index");
+	}
+	````
+
+1. Open the **Index.cshtml* file, located in the _Views/Home_ folder.
+
+1. Locate the _foreach_ statement, and add the following code at the end of the **tr** element. This code will add the _To Public_ and _To Private_ links next to each photo when corresponds.
+
+	<!-- mark:11-21 -->
+	````HTML
+	@foreach (var photo in this.Model)
+	{
+		<tr>
+			<td>@photo.PartitionKey</td>
+			<td>@photo.Title</td>
+			<td>@photo.Description</td>
+			<td>@Html.ActionLink("Edit", "Edit", new { partitionKey = photo.PartitionKey, rowKey = photo.RowKey })</td>
+			<td>@Html.ActionLink("Details", "Details", new { partitionKey = photo.PartitionKey, rowKey = photo.RowKey })</td>
+			<td>@Html.ActionLink("Delete", "Delete", new { partitionKey = photo.PartitionKey, rowKey = photo.RowKey })</td>
+                
+			@if (photo.PartitionKey == "Public")
+			{
+				if (this.User.Identity.IsAuthenticated)
+				{
+					<td>@Html.ActionLink("To Private", "ToPrivate", new { partitionKey = photo.PartitionKey, rowKey = photo.RowKey })</td>
+				}
+			}
+			else
+			{
+				<td>@Html.ActionLink("To Public", "ToPublic", new { partitionKey = photo.PartitionKey, rowKey = photo.RowKey })</td>
+			}      
+		</tr>
+	}
+	````
+
+1. Open the _Create.cshtml_ file, located at the _Views/Home_ folder.
+
+1. Add the following **if** statement before the **input** element. This code adds a checkbox to upload the new photo as public if the user is authenticated. If it is not authenticated, the photo will be uploaded as public by default.
+
+	<!-- mark:5-14 -->
+	````HTML
+	<div>
+		<label>Image</label>
+		<input type="file" name="file" id="file" />
+	</div>
+	if (this.User.Identity.IsAuthenticated){
+		<div>
+			@Html.CheckBox("Public", false)  Public
+		</div>
+    }
+	else {
+		<div>
+			@Html.CheckBox("Public", true, new { disabled = "disabled" })  Public
+		</div>
+	}
+	<input type="submit" value="Create" />
+	````
+1. Run the application by pressing **F5**.
+
+1. If you previously upload a photo, you will be able to see them listed; otherwise upload a new photo. The listed photos are public and can be seen by all application users, even if they are not authenticated.
+
+1. Log in to the application if you have already created a user, or else register a new one. After registration you will be automatically logged in.
+
+1. Upload a new photo after being logged in. Notice that you are able to see the public photos and the private ones.
+
+1. Click the **Log off** button to log off. The page will be refreshed and you will not be able to see the photos uploaded as private anymore.
+
+	This is because when you log in a SAS is created to allow you to read and write to that user partition key. When you are not logged you have a SAS that only grants permission over the "Public" partition key, allowing you to read and write rows in that partition key.
 
 <a name="Ex4Task2" />
 #### Task 2 - Adding SAS at Blob level  ####
