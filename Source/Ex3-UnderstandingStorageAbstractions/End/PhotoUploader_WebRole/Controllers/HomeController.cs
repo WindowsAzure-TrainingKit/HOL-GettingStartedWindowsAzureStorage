@@ -28,11 +28,11 @@ namespace PhotoUploader_WebRole.Controllers
         //
         // GET: /Home/Details/5
 
-        public ActionResult Details(string id)
+        public ActionResult Details(string partitionKey, string rowKey)
         {
             CloudTableClient cloudTableClient = this.StorageAccount.CreateCloudTableClient();
             var photoContext = new PhotoDataServiceContext(cloudTableClient);
-            PhotoEntity photo = photoContext.GetPhotos().SingleOrDefault(x => x.RowKey.Equals(id));
+            PhotoEntity photo = photoContext.GetById(partitionKey,rowKey);
 
             if (photo == null)
             {
@@ -64,6 +64,7 @@ namespace PhotoUploader_WebRole.Controllers
         {
             if (this.ModelState.IsValid)
             {
+                photoViewModel.PartitionKey = !this.User.Identity.IsAuthenticated ? "Public" : this.User.Identity.Name;
                 var photo = this.FromViewModel(photoViewModel);
 
                 if (file != null)
@@ -98,11 +99,11 @@ namespace PhotoUploader_WebRole.Controllers
         //
         // GET: /Home/Edit/5
 
-        public ActionResult Edit(string id)
+        public ActionResult Edit(string partitionKey, string rowKey)
         {
             CloudTableClient cloudTableClient = this.StorageAccount.CreateCloudTableClient();
             var photoContext = new PhotoDataServiceContext(cloudTableClient);
-            PhotoEntity photo = photoContext.GetPhotos().SingleOrDefault(x => x.RowKey.Equals(id));
+            PhotoEntity photo = photoContext.GetById(partitionKey, rowKey);
 
             if (photo == null)
             {
@@ -143,11 +144,11 @@ namespace PhotoUploader_WebRole.Controllers
         //
         // GET: /Home/Delete/5
 
-        public ActionResult Delete(string id)
+        public ActionResult Delete(string partitionKey, string rowKey)
         {
             CloudTableClient cloudTableClient = this.StorageAccount.CreateCloudTableClient();
             var photoContext = new PhotoDataServiceContext(cloudTableClient);
-            PhotoEntity photo = photoContext.GetPhotos().SingleOrDefault(x => x.RowKey.Equals(id));
+            PhotoEntity photo = photoContext.GetById(partitionKey, rowKey);
 
             if (photo == null)
             {
@@ -168,12 +169,12 @@ namespace PhotoUploader_WebRole.Controllers
 
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public ActionResult DeleteConfirmed(string id)
+        public ActionResult DeleteConfirmed(string partitionKey, string rowKey)
         {
             //Delete information From Table Storage
             CloudTableClient cloudTableClient = this.StorageAccount.CreateCloudTableClient();
             var photoContext = new PhotoDataServiceContext(cloudTableClient);
-            var photo = photoContext.GetPhotos().SingleOrDefault(x => x.RowKey.Equals(id));
+            var photo = photoContext.GetById(partitionKey, rowKey);
             photoContext.DeletePhoto(photo);
 
             //Deletes the Image from Blob Storage
