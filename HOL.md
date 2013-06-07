@@ -1188,6 +1188,128 @@ This method takes the partition and the permissions passed as parameters and cre
 
 1. Open the **HomeController** class, located in the _Controllers_ folder.
 
+1. At the top of the class, locate the private variable named **UriTable**. This variable holds a reference to the URI of your table storage. By default is pointing to the local storage emulator, however, it is recommended to upate this value with the URI of your Azure Table Storage account.
+
+	````C#
+	private Uri UriTable = new Uri("http://127.0.0.1:10002/devstoreaccount1");
+	````
+
+1. Go to the **Index** method and replace its content with the following code, that creates the **CloudTableClient** instances using the SAS tokens, and retrieves all the public photos, and also the private photos of the logged user, if any.
+
+	<!-- mark:3-27 -->
+	````C#
+	public ActionResult Index()
+	{
+		CloudTableClient cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(Session["Sas"].ToString()));
+		var photoContext = new PhotoDataServiceContext(cloudTableClient);
+		var photoList = new List<PhotoViewModel>();
+
+		var photos = photoContext.GetPhotos("Public");
+		if (photos.Count() > 0)
+		{
+			photoList = photos.Select(x => this.ToViewModel(x)).ToList();
+		}
+
+		var privatePhotos = new List<PhotoViewModel>();
+
+		if (this.User.Identity.IsAuthenticated)
+		{
+			cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(Session["MySas"].ToString()));
+			photoContext = new PhotoDataServiceContext(cloudTableClient);
+
+			photos = photoContext.GetPhotos(this.User.Identity.Name);
+			if (photos.Count() > 0)
+			{
+				photoList.AddRange(photos.Select(x => this.ToViewModel(x)).ToList());
+			}
+		}
+
+		return this.View(photoList);
+	}
+	````
+
+1. Locate the **Details** action method, and replace its content with the following code, that queries the storage table passing the corresponding SAS, depending on if the photo is public or private.
+
+	<!-- mark:3-34 -->
+	````C#
+	public ActionResult Details(string partitionKey, string rowKey)
+	{
+		CloudTableClient cloudTableClient;
+		PhotoEntity photo;
+
+		if (partitionKey == "Public")
+		{
+			cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(Session["Sas"].ToString()));
+			var photoContext = new PhotoDataServiceContext(cloudTableClient);
+			photo = photoContext.GetById(partitionKey, rowKey);
+			if (photo == null)
+			{
+				return this.HttpNotFound();
+			}
+		}
+		else
+		{
+			cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(Session["MySas"].ToString()));
+			var photoContext = new PhotoDataServiceContext(cloudTableClient);
+
+			photo = photoContext.GetById(this.User.Identity.Name, rowKey);
+			if (photo == null)
+			{
+				return this.HttpNotFound();
+			}
+		}
+
+		var viewModel = this.ToViewModel(photo);
+		if (!string.IsNullOrEmpty(photo.BlobReference))
+		{
+			viewModel.Uri = this.GetBlobContainer().GetBlockBlobReference(photo.BlobReference).Uri.ToString();
+		}
+
+		return this.View(viewModel);
+	}
+	````
+
+1. Browse to the POST version of the **Create** action method, locate the line where the partition key is assigned to the _photoViewModel_ instance, and replace it with the following code.
+
+	<!-- mark:6 -->
+	````C#
+	[HttpPost]
+	public ActionResult Create(PhotoViewModel photoViewModel, HttpPostedFileBase file, bool Public, FormCollection collection)
+	{
+		if (this.ModelState.IsValid)
+		{
+			photoViewModel.PartitionKey = Public ? "Public" : this.User.Identity.Name;
+			....
+		}
+	}
+	````
+
+1. In the same method, locate the section that saves the information to the table storage, which is marked by a comment, and replace its content with the following code. This code determines if the public or private SAS will be used to add the row to the table storage.
+
+	<!-- mark:2-12 -->
+	````C#
+	//Save information to Table Storage
+	var sasKey = Public ? "Sas" : "MySas";
+	if (!this.User.Identity.IsAuthenticated)
+	{
+		sasKey = "Sas";
+		photo.PartitionKey = "Public";
+	}
+
+	CloudTableClient cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(Session[sasKey].ToString()));
+	var photoContext = new PhotoDataServiceContext(cloudTableClient);
+
+	photoContext.AddPhoto(photo);
+	````
+
+1. Replace the **CloudTableClient** assignation with the following code, in these methods: _[GET] Edit_, _[POST] Edit_, _[GET] Delete_, _[GET] Delete_.
+
+	````C#
+	string token = partitionKey == "Public" ? Session["Sas"].ToString() : Session["MySas"].ToString();
+
+	CloudTableClient cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(token));
+	````
+
 1. Go to the **RefreshCredentials** method, and add the following code as the method's body.
 
 	<!-- mark:3-21 -->
