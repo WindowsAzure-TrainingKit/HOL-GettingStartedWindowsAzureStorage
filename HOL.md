@@ -72,7 +72,7 @@ This hands-on lab includes the following exercises:
 1.	[Exercise 2 - Managing a Windows Azure Storage Account](#Exercise2)
 1.	[Exercise 3 - Understanding the Windows Azure Storage Abstractions](#Exercise3)
 1.	[Exercise 4 - Introducing SAS (Shared Access Signature)](#Exercise4)
-1.	[Exercise 5 - Updating Security to use Stored Access Signature](#Exercise5)
+1.	[Exercise 5 - Updating SAS to use Stored Access Policies](#Exercise5)
 
 > **Note:** Each exercise is accompanied by a starting solution. These solutions are missing some code sections that are completed through each exercise. Therefore, start solutions will not necessarily work running them directly.
 Inside each exercise you will also find an end folder where you find the resulting solution you should obtain after completing the exercises. You can use this solution as a guide if you need additional help working through the exercises.
@@ -1454,7 +1454,7 @@ In this task you will uses SAS at queue level to restrict access to the storage 
 
 
 <a name="Exercise5" />
-### Exercise 5: Updating Security to use Stored Access Signature ###
+### Exercise 5: Updating SAS to use Stored Access Policies ###
 
 A stored access policy provides an additional level of control over Shared Access Signatures on the server side. Establishing a stored access policy serves to group Shared Access Signatures and to provide additional restrictions for signatures that are bound by the policy. You can use a stored access policy to change the start time, expiry time, or permissions for a signature, or to revoke it after it has been issued.
 
