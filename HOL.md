@@ -1463,13 +1463,26 @@ This method takes the partition and the permissions passed as parameters and cre
 	````
 1. Run the application by pressing **F5**.
 
-1. If you previously upload a photo, you will be able to see them listed; otherwise upload a new photo. The listed photos are public and can be seen by all application users, even if they are not authenticated.
+1. If you previously upload a photo, you will be able to see them listed; otherwise upload a new photo by clicking the **Create** link. The listed photos are public and can be seen by all application users, even if they are not authenticated.
+
+	![Listing all the public photos](Images/listing-public-photos.png?raw=true "Listing all the public photos")
+
+	_Listing all the public photos_
 
 1. Log in to the application if you have already created a user, or else register a new one. After registration you will be automatically logged in.
 
 1. Upload a new photo after being logged in. Notice that you are able to see the public photos and the private ones.
 
+	![Listing public and private photos](Images/listing-all-photos.png?raw=true "Listing public and private photos")
+
+	_Listing public and private photos_
+
+
 1. Click the **Log off** button to log off. The page will be refreshed and you will not be able to see the photos uploaded as private anymore.
+
+	![Private photos are not available when not authenticated](Images/listing-public-photos.png?raw=true "Private photos are not available when not authenticated")
+
+	_Private photos are not available when not authenticated_
 
 	This is because when you log in a SAS is created to allow you to read and write to that user partition key. When you are not logged you have a SAS that only grants permission over the "Public" partition key, allowing you to read and write rows in that partition key.
 
@@ -1572,8 +1585,121 @@ This method takes a block blob reference and creates a Blob SAS for it, with the
 #### Task 3 - Adding SAS at Queue level  ####
 In this task you will uses SAS at queue level to restrict access to the storage queues. SAS can enable Read, Add, Process, and Update permissions on the queue.
 
-1. First Step.
+1. In the **QueueProcessor_WorkerRole** project, open the **WorkerRole** class.
 
+1. At the top of the class add the following using statements.
+
+	````C#
+	using Microsoft.WindowsAzure.Storage.Queue;
+	using Microsoft.WindowsAzure.Storage.Auth;
+	````
+
+1. Add the following class variables at the start of the class, that contains a reference to the Queue Uri and to the expiration time of the queue SAS token. Keep in mind that you can replace the local storage uri, with your Azure Queue Storage URL.
+
+	````C#
+	private DateTime serviceQueueSasExpiryTime;
+	private Uri uri = new Uri("http://127.0.0.1:10001/devstoreaccount1");
+	````
+
+1. Locate the **GetQueueSas** method, and the following code in its body.
+
+	<!-- mark:3-12 -->
+	````C#
+	private string GetQueueSas()
+	{
+		var storageAccount = CloudStorageAccount.Parse(CloudConfigurationManager.GetSetting("StorageConnectionString"));
+		var client = storageAccount.CreateCloudQueueClient();
+		var queue = client.GetQueueReference("messagequeue");
+		queue.CreateIfNotExists();
+		var token = queue.GetSharedAccessSignature(
+					new SharedAccessQueuePolicy() { Permissions = SharedAccessQueuePermissions.ProcessMessages | SharedAccessQueuePermissions.Read | SharedAccessQueuePermissions.Add | SharedAccessQueuePermissions.Update, SharedAccessExpiryTime = DateTime.UtcNow.AddMinutes(15) },
+					null);
+
+		this.serviceQueueSasExpiryTime = DateTime.UtcNow.AddMinutes(15);
+		return token;
+	}
+	````
+
+	This method gets a reference to the application's queue and generates a SAS token that has permissions to process, read, add, and update messages.
+
+1. Browse to the **Run** method and replace its body with the following code.
+
+	<!-- mark:3-26 -->
+	````C#
+	public override void Run()
+	{
+		Trace.TraceInformation("QueueProcessor_WorkerRole entry point called", "Information");
+		var queueClient = new CloudQueueClient(this.uri, new StorageCredentials(this.GetQueueSas()));
+
+		var queue = queueClient.GetQueueReference("messagequeue");
+
+		while (true)
+		{
+			Thread.Sleep(10000);
+			Trace.TraceInformation("Working", "Information");
+             
+			if (DateTime.UtcNow.AddMinutes(1) >= this.serviceQueueSasExpiryTime)
+			{
+				queueClient = new CloudQueueClient(this.uri, new StorageCredentials(this.GetQueueSas()));
+				queue = queueClient.GetQueueReference("messagequeue");
+			}
+
+			var msg = queue.GetMessage();
+
+			if (msg != null)
+			{
+				Trace.TraceInformation(string.Format("Message '{0}' processed.", msg.AsString));
+				queue.DeleteMessage(msg);
+			}
+		}
+	}
+	````
+
+1. Open the **AccountController** class located in the _Controllers_ folder of the **PhotoUploader_WebRole** project. Add the following line of code in the **Login** and **Register** methods, after saving the other SAS in session variables.
+
+	````C#
+	Session["QueueSas"] = this.StorageAccount.CreateCloudQueueClient().GetQueueReference("messagequeue").GetSharedAccessSignature(
+                        new SharedAccessQueuePolicy() { Permissions = SharedAccessQueuePermissions.Add | SharedAccessQueuePermissions.Read, SharedAccessExpiryTime = DateTime.UtcNow.AddMinutes(15) },
+                        null
+                        );
+	````
+
+1. Open the **HomeController** class, and browse to the **RefreshCredentials** method. Add the following line of code inside the method, after saving the _Public table SAS_ in a session variable.
+
+	<!-- mark:9-12 -->
+	````C#
+	public void RefreshAccessCredentials()
+	{
+		if ((Session["ExpireTime"] as DateTime? == null) || ((DateTime)Session["ExpireTime"] < DateTime.UtcNow))
+		{
+			CloudTableClient cloudTableClientAdmin = this.StorageAccount.CreateCloudTableClient();
+			var photoContextAdmin = new PhotoDataServiceContext(cloudTableClientAdmin);
+
+			Session["Sas"] = photoContextAdmin.GetSas("Public", SharedAccessTablePermissions.Add | SharedAccessTablePermissions.Update | SharedAccessTablePermissions.Query);
+			Session["QueueSas"] = this.StorageAccount.CreateCloudQueueClient().GetQueueReference("messagequeue").GetSharedAccessSignature(
+                        new SharedAccessQueuePolicy() { Permissions = SharedAccessQueuePermissions.Add | SharedAccessQueuePermissions.Read, SharedAccessExpiryTime = DateTime.UtcNow.AddMinutes(15) },
+                        null
+                        );
+			...
+		}
+	}
+	````
+
+1. Locate the **GetCloudQueue** method and replace the code with the following snippet.
+
+	````C#
+	private CloudQueue GetCloudQueue()
+	{
+		var queueClient = new CloudQueueClient(this.UriQueue, new StorageCredentials(Session["QueueSas"].ToString()));
+		var queue = queueClient.GetQueueReference("messagequeue");
+		queue.CreateIfNotExists();
+		return queue;
+	}
+	````
+	
+	This code creates an instance of the **CloudQueueClient** class for the specified queue, using the created SAS, and then returns that instance.
+
+1.Press **F5** to run the solution.
 
 <a name="Exercise5" />
 ### Exercise 5: Updating SAS to use Stored Access Policies ###
