@@ -10,7 +10,7 @@
 	<Description>In this lab, you will learn the basics of Windows Azure Storage, how to create and configure storage accounts and how you can programmatically can access the different types of storage service. Blobs, Tables, and Queues are all available as part of the Windows Azure Storage account, and provide durable storage on the Windows Azure platform.</Description>  
 	<Document ConversionType="Html">.\HOL.md</Document>
 	<Title>Getting Started With Windows Azure Storage</Title>
-	<Version>1.0.0</Version>
+	<Version>2.0.0</Version>
 	<Source>.\Source</Source>
 	<DependencyChecker>.\Source\Setup\Dependencies.depi</DependencyChecker>
 	<CustomProperties>
