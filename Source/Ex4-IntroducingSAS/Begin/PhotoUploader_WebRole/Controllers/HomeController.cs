@@ -1,11 +1,14 @@
-﻿using Microsoft.WindowsAzure;
-using Microsoft.WindowsAzure.Storage;
-using Microsoft.WindowsAzure.Storage.Table;
-using PhotoUploader_WebRole.Models;
+﻿using PhotoUploader_WebRole.Models;
 using System;
+using System.Collections.Generic;
+using System.Configuration;
+using System.IO;
+using System.Linq;
 using System.Web;
 using System.Web.Mvc;
-using System.Linq;
+using Microsoft.WindowsAzure;
+using Microsoft.WindowsAzure.Storage;
+using Microsoft.WindowsAzure.Storage.Table;
 using Microsoft.WindowsAzure.Storage.Blob;
 using Microsoft.WindowsAzure.Storage.Queue;
 
@@ -64,7 +67,7 @@ namespace PhotoUploader_WebRole.Controllers
         {
             if (this.ModelState.IsValid)
             {
-                photoViewModel.PartitionKey = !this.User.Identity.IsAuthenticated ? "Public" : this.User.Identity.Name;
+				photoViewModel.PartitionKey = this.User.Identity.IsAuthenticated ? this.User.Identity.Name : "Public";
                 var photo = this.FromViewModel(photoViewModel);
 
                 if (file != null)
@@ -171,10 +174,9 @@ namespace PhotoUploader_WebRole.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult DeleteConfirmed(string partitionKey, string rowKey)
         {
-            //Delete information From Table Storage
             CloudTableClient cloudTableClient = this.StorageAccount.CreateCloudTableClient();
             var photoContext = new PhotoDataServiceContext(cloudTableClient);
-            var photo = photoContext.GetById(partitionKey, rowKey);
+            PhotoEntity photo = photoContext.GetById(partitionKey, rowKey);
             photoContext.DeletePhoto(photo);
 
             //Deletes the Image from Blob Storage

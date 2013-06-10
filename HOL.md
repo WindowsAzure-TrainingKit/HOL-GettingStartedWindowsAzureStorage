@@ -371,10 +371,10 @@ In this task you will update the MVC application actions to perform operations a
 	(Code Snippet - _GettingStartedWindowsAzureStorage - Ex3-DataContextGetById_)
 
 	````C#
-	public PhotoEntity GetById(string rowKey)
+	public PhotoEntity GetById(string partitioKey, string rowKey)
 	{
 		CloudTable table = this.ServiceClient.GetTableReference("Photos");
-		TableOperation retrieveOperation = TableOperation.Retrieve<PhotoEntity>("Photo", rowKey);
+		TableOperation retrieveOperation = TableOperation.Retrieve<PhotoEntity>(partitioKey, rowKey);
 
 		TableResult retrievedResult = table.Execute(retrieveOperation);
 
@@ -516,19 +516,19 @@ In this task you will update the MVC application actions to perform operations a
 	(Code Snippet - _GettingStartedWindowsAzureStorage - Ex3-TableStorageDetails_)
 
 	````C#
-	public ActionResult Details(string id)
+	public ActionResult Details(string partitionKey, string rowKey)
 	{
 		CloudTableClient cloudTableClient = this.StorageAccount.CreateCloudTableClient();
 		var photoContext = new PhotoDataServiceContext(cloudTableClient);
-		PhotoEntity photo = photoContext.GetPhotos().SingleOrDefault(x => x.RowKey.Equals(id));
+		PhotoEntity photo = photoContext.GetById(partitionKey, rowKey);
 
-		if (photo == null)
-		{
-			 return HttpNotFound();
-		}
+	if (photo == null)
+	{
+		 return HttpNotFound();
+	}
 
-		var viewModel = this.ToViewModel(photo);
-		return this.View(viewModel);
+	var viewModel = this.ToViewModel(photo);
+	return this.View(viewModel);
 	}
 	````
 
@@ -543,7 +543,7 @@ In this task you will update the MVC application actions to perform operations a
 		if (this.ModelState.IsValid)
 		{
 			var photo = this.FromViewModel(photoViewModel);
-
+			photo.PartitionKey = this.User.Identity.IsAuthenticated ? this.User.Identity.Name : "Public";
 			// Save information to Table Storage
 			CloudTableClient cloudTableClient = this.StorageAccount.CreateCloudTableClient();
 			var photoContext = new PhotoDataServiceContext(cloudTableClient);
@@ -561,11 +561,11 @@ In this task you will update the MVC application actions to perform operations a
 	(Code Snippet - _GettingStartedWindowsAzureStorage - Ex3-TableStorageEdit_)
 
 	````C#
-	public ActionResult Edit(string id)
+	public ActionResult Edit(string partitionKey, string rowKey)
 	{
 		CloudTableClient cloudTableClient = this.StorageAccount.CreateCloudTableClient();
 		var photoContext = new PhotoDataServiceContext(cloudTableClient);
-		PhotoEntity photo = photoContext.GetPhotos().SingleOrDefault(x => x.RowKey.Equals(id));
+		PhotoEntity photo = photoContext.GetById(partitionKey, rowKey);
 
 		if (photo == null)
 		{
@@ -608,11 +608,11 @@ In this task you will update the MVC application actions to perform operations a
 	(Code Snippet - _GettingStartedWindowsAzureStorage - Ex3-TableStorageDelete_)
 
 	````C#
-	public ActionResult Delete(string id)
+	public ActionResult Delete(string partitionKey, string rowKey)
 	{
 		CloudTableClient cloudTableClient = this.StorageAccount.CreateCloudTableClient();
 		var photoContext = new PhotoDataServiceContext(cloudTableClient);
-		PhotoEntity photo = photoContext.GetPhotos().SingleOrDefault(x => x.RowKey.Equals(id));
+		PhotoEntity photo = photoContext.GetById(partitionKey, rowKey);
 
 		if (photo == null)
 		{
@@ -632,12 +632,11 @@ In this task you will update the MVC application actions to perform operations a
 	````C#
 	[HttpPost, ActionName("Delete")]
 	[ValidateAntiForgeryToken]
-	public ActionResult DeleteConfirmed(string id)
+	public ActionResult DeleteConfirmed(string partitionKey, string rowKey)
 	{
-		//Delete information From Table Storage
 		CloudTableClient cloudTableClient = this.StorageAccount.CreateCloudTableClient();
 		var photoContext = new PhotoDataServiceContext(cloudTableClient);
-		var photo = photoContext.GetPhotos().SingleOrDefault(x => x.RowKey.Equals(id));
+		PhotoEntity photo = photoContext.GetById(partitionKey, rowKey);
 		photoContext.DeletePhoto(photo);
 
 		return this.RedirectToAction("Index");
@@ -725,13 +724,14 @@ In this task you will configure the MVC application to upload images to Blob Sto
 
 	(Code Snippet - _GettingStartedWindowsAzureStorage - Ex3-BlobCreate_)
 
-	<!-- mark:8-20 -->
+	<!-- mark:9-21 -->
 	````C#
 	[HttpPost]
 	public ActionResult Create(PhotoViewModel photoViewModel, HttpPostedFileBase file, FormCollection collection)
 	{
 		if (this.ModelState.IsValid)
 		{
+			photoViewModel.PartitionKey = this.User.Identity.IsAuthenticated ? this.User.Identity.Name : "Public";
 			var photo = this.FromViewModel(photoViewModel);
 
 			if (file != null)
@@ -762,7 +762,7 @@ In this task you will configure the MVC application to upload images to Blob Sto
 
 	<!-- mark:6-9 -->
 	````C#
-	public ActionResult Details(string id)
+	public ActionResult Details(string partitionKey, string rowKey)
 	{
 		...
 
@@ -781,7 +781,7 @@ In this task you will configure the MVC application to upload images to Blob Sto
 	(Code Snippet - _GettingStartedWindowsAzureStorage - Ex3-BlobEdit_)
 	<!-- mark:6-9 -->
 	````C#
-	public ActionResult Edit(string id)
+	public ActionResult Edit(string partitionKey, string rowKey)
 	{
 		...
 
@@ -801,7 +801,7 @@ In this task you will configure the MVC application to upload images to Blob Sto
 
 	<!-- mark:6-9 -->
 	````C#
-	public ActionResult Delete(string id)
+	public ActionResult Delete(string partitionKey, string rowKey)
 	{
 		...
 
@@ -823,7 +823,7 @@ In this task you will configure the MVC application to upload images to Blob Sto
 	````C#
 	[HttpPost, ActionName("Delete")]
 	[ValidateAntiForgeryToken]
-	public ActionResult DeleteConfirmed(string id)
+	public ActionResult DeleteConfirmed(string partitionKey, string rowKey)
 	{
 		//Delete information From Table Storage
 		...
@@ -1056,8 +1056,8 @@ You can grant access to an entire table, to a table range (for example, to all t
 
 1. Modify the default constructor to use _"Public"_ as the partiton key by default, and add an overloaded constructor that receives a partition key as a parameter.
 	
-	(Code Snippet - _GettingStarteWindowsAzrueStorage_ - _Ex4-UpdatePhotoEntityConstructors_)
-	<!-- mark:5, 9-13 -->
+	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex4-UpdatePhotoEntityConstructors_)
+	<!-- mark:3-13 -->
 	````C#
 	public class PhotoEntity : TableEntity
 	{
@@ -1077,7 +1077,7 @@ You can grant access to an entire table, to a table range (for example, to all t
 	}
 	````
 
-1. Open the _PhotoDataServiceContext.cs_ file and locate the **GetSas** method. Replace the entire method with this new implementation.
+1. Open the **PhotoDataServiceContext.cs** file and locate the **GetSas** method. Replace the entire method with this new implementation.
 
 	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex4-NewImplementationGetSasMethod_)
 
@@ -1104,9 +1104,9 @@ You can grant access to an entire table, to a table range (for example, to all t
 	````
 	> **Note**: This method takes the partition and the permissions passed as parameters and creates a SAS for the _Photos_ table. This SAS will grant the specified permissions only to the rows that correspond to that partition. Finally, it returns the SAS in string format.
 
-1. Go to the controller folder and create a new base controller. To do so, right click in the controller folder, go to **add** and select **controller**.
+1. Go to the controller folder and create a new base controller. To do so, right click in the controller folder, go to **Add** and select **Controller...**.
 
-1. Name the file **BaseController** and click **OK**.
+1. Name the file **BaseController** and click **Add**.
 
 	![BaseController creation](Images/basecontroller-creation.png?raw=true "BaseController creation")
 
@@ -1234,12 +1234,22 @@ You can grant access to an entire table, to a table range (for example, to all t
 	<!-- mark:1-2 -->
 	````C#
 	var token = partitionKey == "Public" ? this.PublicTableSas : this.AuthenticatedTableSas;
-	CloudTableClient cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(this.PublicTableSas));
+	CloudTableClient cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(token));
 	````
 
 1. Repeate the previous step in the **Edit** and **Delete** _GET_ actions and in the **Delete** _Post_ action.
 
-1. Locate the **Create** _Post_ action and update the _photoViewModel_ partitionKey with the following.
+1. Locate the **Create** _Post_ action and add new bool parameter called Public.
+
+	````C#
+	[HttpPost]
+	public ActionResult Create(PhotoViewModel photoViewModel, HttpPostedFileBase file, bool Public, FormCollection collection)
+	{
+		...
+	}
+	````
+
+1. Update the **Create** _Post_ action and update the _photoViewModel_ partitionKey with the following.
 
 	````C#
 	photoViewModel.PartitionKey = Public ? "Public" : this.User.Identity.Name;
@@ -1261,19 +1271,9 @@ You can grant access to an entire table, to a table range (for example, to all t
 	CloudTableClient cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(token));
 	````
 
-1. Update the **Create** _Post_ action in order to have a recieve a new bool parameter called Public.
-
-	````C#
-	[HttpPost]
-	public ActionResult Create(PhotoViewModel photoViewModel, HttpPostedFileBase file, bool Public, FormCollection collection)
-	{
-		...
-	}
-	````
-
 1. Scroll down to the **Edit** _Post_ action and update the _CloudTableClient_ creation with the following code.
 
-	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex4-ewCloudTableClientCall-EditPost_)
+	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex4-NewCloudTableClientCall-EditPost_)
 
 	<!-- mark:1-2 -->
 	````C#
@@ -1283,7 +1283,7 @@ You can grant access to an entire table, to a table range (for example, to all t
 
 1. Create a new action called **ToPublic** and add the following code in its body. This method will delete a private blob (one created with a username as the partition key) and it will re-create it with "Public" as the partition key.
 
-	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex4-ToPublicMethod_)
+	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex4-ToPublicAction_)
 
 	<!-- mark:1-20 -->
 	````C#
@@ -1311,7 +1311,7 @@ You can grant access to an entire table, to a table range (for example, to all t
 
 1. In the same way, create a new action called **ToPrivate**, and add the following code in the method's body. As opposite to the **ToPublic** method, this one will remove the photo's row from the _Public_ partition key and re-add it to the logged user partition. Therefore, this method needs a logged user to work.
 
-	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex4-ToPrivateMethod_)
+	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex4-ToPrivateAction_)
 
 	<!-- mark:1-20 -->
 	````C#
@@ -1509,7 +1509,7 @@ In this task you will learn how to create SAS for Azure Blobs. SAS can be create
 	````
 	The preceding code gets the blob reference by using the partition and row keys, and calls the **GetSasForBlob** method passing the reference and the permissions as parameters. In this case, the SAS is created with **Read** permissions.
 
-1. You will now add the corresponding view to the previously created action. To do so, right click in the **Home** folder under **Views**, go to **Add** and select **Existing Item**.
+1. You will now add the corresponding view to the previously created action. To do so, right click in the **Home** folder under **Views**, go to **Add** and select **Existing Item...**.
 
 1. Browse to the **Assets/Ex4-IntroducingSAS** folder, select the **Share.cshtml** view and click **Add**.
 
@@ -1558,11 +1558,11 @@ In this task you will uses SAS at queue level to restrict access to the storage 
 	private Uri uri = new Uri("http://127.0.0.1:10001/devstoreaccount1");
 	````
 
-1. Locate the **GetQueueSas** method, and the following code in its body.
+1. Create a new private method called **GetQueueSas**, and the following code in its body.
 
 	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex4-GetQueueSasUpdate_)
 
-	<!-- mark:3-12 -->
+	<!-- mark:1-13 -->
 	````C#
 	private string GetQueueSas()
 	{
@@ -1631,19 +1631,36 @@ In this task you will uses SAS at queue level to restrict access to the storage 
 
 	>**Note**: In order to work against windows azure, you should update the Uri queue with the one in azure.
 
-1. Add the following line of code in the **OnActionExecuting** method.
+1. Replcae the if structure in the **OnActionExecuting** methodwith the following code.
 
 	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex4-QueueSharedAccessSignature_)
 
-	<!-- mark:1-4 -->
+	<!-- mark:6-20 -->
 	````C#
-	this.QueueSas = this.StorageAccount.CreateCloudQueueClient().GetQueueReference("messagequeue").GetSharedAccessSignature(
-                       new SharedAccessQueuePolicy() { Permissions = SharedAccessQueuePermissions.Add | SharedAccessQueuePermissions.Read, SharedAccessExpiryTime = DateTime.UtcNow.AddMinutes(15) },
-                       null
-                       );
+	 protected override void OnActionExecuting(ActionExecutingContext filterContext)
+        {
+            CloudTableClient cloudTableClientAdmin = this.StorageAccount.CreateCloudTableClient();
+            var photoContextAdmin = new PhotoDataServiceContext(cloudTableClientAdmin);
+
+            if (this.User.Identity.IsAuthenticated)
+            {
+                this.AuthenticatedTableSas = photoContextAdmin.GetSas(this.User.Identity.Name, SharedAccessTablePermissions.Add | SharedAccessTablePermissions.Delete | SharedAccessTablePermissions.Query | SharedAccessTablePermissions.Update);
+                this.PublicTableSas = photoContextAdmin.GetSas("Public", SharedAccessTablePermissions.Add | SharedAccessTablePermissions.Delete | SharedAccessTablePermissions.Query | SharedAccessTablePermissions.Update);
+                this.QueueSas = this.StorageAccount.CreateCloudQueueClient().GetQueueReference("messagequeue").GetSharedAccessSignature(
+                   new SharedAccessQueuePolicy() { Permissions = SharedAccessQueuePermissions.Add | SharedAccessQueuePermissions.Read, SharedAccessExpiryTime = DateTime.UtcNow.AddMinutes(15) },
+                   null
+                   );
+            }
+            else
+            {
+                this.PublicTableSas = photoContextAdmin.GetSas("Public", SharedAccessTablePermissions.Add | SharedAccessTablePermissions.Update | SharedAccessTablePermissions.Query);
+                this.AuthenticatedTableSas = null;
+                this.QueueSas = null;
+            }
+        }
 	````
 
-1. Locate the **GetCloudQueue** method and replace the code with the following snippet.
+1. Open the **HomeController** and locate the **GetCloudQueue** method and replace the code with the following snippet.
 	
 	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex4-GetCloudQueueMethod_)
 

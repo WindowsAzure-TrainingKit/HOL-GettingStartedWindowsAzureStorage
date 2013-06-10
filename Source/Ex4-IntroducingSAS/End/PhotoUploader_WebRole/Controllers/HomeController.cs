@@ -1,11 +1,14 @@
-﻿using Microsoft.WindowsAzure;
-using Microsoft.WindowsAzure.Storage;
-using Microsoft.WindowsAzure.Storage.Table;
-using PhotoUploader_WebRole.Models;
+﻿using PhotoUploader_WebRole.Models;
 using System;
+using System.Collections.Generic;
+using System.Configuration;
+using System.IO;
+using System.Linq;
 using System.Web;
 using System.Web.Mvc;
-using System.Linq;
+using Microsoft.WindowsAzure;
+using Microsoft.WindowsAzure.Storage;
+using Microsoft.WindowsAzure.Storage.Table;
 using Microsoft.WindowsAzure.Storage.Blob;
 using Microsoft.WindowsAzure.Storage.Queue;
 using Microsoft.WindowsAzure.Storage.Auth;
@@ -53,8 +56,7 @@ namespace PhotoUploader_WebRole.Controllers
         public ActionResult Details(string partitionKey, string rowKey)
         {
             var token = partitionKey == "Public" ? this.PublicTableSas : this.AuthenticatedTableSas;
-
-            CloudTableClient cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(this.PublicTableSas));
+            CloudTableClient cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(token));
             var photoContext = new PhotoDataServiceContext(cloudTableClient);
             PhotoEntity photo = photoContext.GetById(partitionKey, rowKey);
             if (photo == null)
@@ -206,54 +208,24 @@ namespace PhotoUploader_WebRole.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult DeleteConfirmed(string partitionKey, string rowKey)
         {
-            if (ModelState.IsValid)
-            {
-                string token = partitionKey == "Public" ? this.PublicTableSas : this.AuthenticatedTableSas;
-
-                CloudTableClient cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(token));
-                var photoContext = new PhotoDataServiceContext(cloudTableClient);
-                PhotoEntity photo = photoContext.GetById(partitionKey, rowKey);
-
-                if (photo == null)
-                {
-                    return this.HttpNotFound();
-                }
-
-                photoContext.DeletePhoto(photo);
-
-                //Deletes the Image from Blob Storage
-                if (!string.IsNullOrEmpty(photo.BlobReference))
-                {
-                    var blob = this.GetBlobContainer().GetBlockBlobReference(photo.BlobReference);
-                    blob.DeleteIfExists();
-                }
-
-                //Send delete notification
-                var msg = new CloudQueueMessage("Photo Deleted");
-                this.GetCloudQueue().AddMessage(msg);
-            }
-            return this.RedirectToAction("Index");
-        }
-
-        [HttpGet]
-        public ActionResult ToPrivate(string partitionKey, string rowKey)
-        {
+            var token = partitionKey == "Public" ? this.PublicTableSas : this.AuthenticatedTableSas;
             CloudTableClient cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(this.PublicTableSas));
             var photoContext = new PhotoDataServiceContext(cloudTableClient);
-            var photo = photoContext.GetById(partitionKey, rowKey);
-            if (photo == null)
-            {
-                return this.HttpNotFound();
-            }
-
+            PhotoEntity photo = photoContext.GetById(partitionKey, rowKey);
             photoContext.DeletePhoto(photo);
 
-            cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(this.AuthenticatedTableSas));
-            photoContext = new PhotoDataServiceContext(cloudTableClient);
-            photo.PartitionKey = this.User.Identity.Name;
-            photoContext.AddPhoto(photo);
+            //Deletes the Image from Blob Storage
+            if (!string.IsNullOrEmpty(photo.BlobReference))
+            {
+                var blob = this.GetBlobContainer().GetBlockBlobReference(photo.BlobReference);
+                blob.DeleteIfExists();
+            }
 
-            return RedirectToAction("Index");
+            //Send delete notification
+            var msg = new CloudQueueMessage("Photo Deleted");
+            this.GetCloudQueue().AddMessage(msg);
+
+            return this.RedirectToAction("Index");
         }
 
         [HttpGet]
@@ -278,6 +250,27 @@ namespace PhotoUploader_WebRole.Controllers
         }
 
         [HttpGet]
+        public ActionResult ToPrivate(string partitionKey, string rowKey)
+        {
+            CloudTableClient cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(this.PublicTableSas));
+            var photoContext = new PhotoDataServiceContext(cloudTableClient);
+            var photo = photoContext.GetById(partitionKey, rowKey);
+            if (photo == null)
+            {
+                return this.HttpNotFound();
+            }
+
+            photoContext.DeletePhoto(photo);
+
+            cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(this.AuthenticatedTableSas));
+            photoContext = new PhotoDataServiceContext(cloudTableClient);
+            photo.PartitionKey = this.User.Identity.Name;
+            photoContext.AddPhoto(photo);
+
+            return RedirectToAction("Index");
+        }
+
+        [HttpGet]
         public ActionResult Share(string partitionKey, string rowKey)
         {
             var cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(this.AuthenticatedTableSas));
@@ -293,7 +286,7 @@ namespace PhotoUploader_WebRole.Controllers
             if (!string.IsNullOrEmpty(photo.BlobReference))
             {
                 CloudBlockBlob blobBlockReference = this.GetBlobContainer().GetBlockBlobReference(photo.BlobReference);
-                sas = photoContext.GetSaSForBlob(blobBlockReference, SharedAccessBlobPermissions.Read);
+                sas = photoContext.GetSasForBlob(blobBlockReference, SharedAccessBlobPermissions.Read);
             }
 
             if (!string.IsNullOrEmpty(sas))
