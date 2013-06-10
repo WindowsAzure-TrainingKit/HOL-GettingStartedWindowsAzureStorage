@@ -1138,7 +1138,7 @@ You can grant access to an entire table, to a table range (for example, to all t
 	public string PublicTableSas { get; set; }
 	````
 
-	>**Note**: Replace the _http://127.0.0.1:10002/devstoreaccount1_ with your storage table account uri in order to work against Windows Azure.
+	>**Note**: Replace the _http://127.0.0.1:10002/devstoreaccount1_ with your storage table account URI in order to work against Windows Azure.
 
 1. Override the **OnActionExecuting** method in the **BaseController** class.
 	
@@ -1163,6 +1163,8 @@ You can grant access to an entire table, to a table range (for example, to all t
 		}
   }
 	````
+
+	>**Note:** The **OnActionExecuting** method is called everytime an action from the derived controller is called. Therefore this is the place where we will generate the SAS for table.
 
 1. Open the **HomeController** class, located in the _Controllers_ folder.
 
@@ -1307,7 +1309,7 @@ You can grant access to an entire table, to a table range (for example, to all t
 	}
 	````
 
-1. On the same way,  create a new action called **ToPrivate**, and add the following code in the method's body. As opposite to the **ToPublic** method, this one will remove the photo's row from the _Public_ partition key and re-add it to the logged user partition. Therefore, this method needs a logged user to work.
+1. In the same way, create a new action called **ToPrivate**, and add the following code in the method's body. As opposite to the **ToPublic** method, this one will remove the photo's row from the _Public_ partition key and re-add it to the logged user partition. Therefore, this method needs a logged user to work.
 
 	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex4-ToPrivateMethod_)
 
@@ -1519,9 +1521,21 @@ In this task you will learn how to create SAS for Azure Blobs. SAS can be create
 
 1. Click the **Share** link, next to one of the uploaded photos. You will navigate to the _Share_ page.
 
+	![Generating a link to share a blob](Images/sharing-a-blob.png?raw=true "Generating a link to share a blob")
+
+	_Generating a link to share a blob_
+
 1. Copy the provided link, and open it in your browser. You will be able to see the image from your browser.
 
+	![Opening a shared blob](Images/opening-a-shared-blob.png?raw=true "Opening a shared blob")
+
+	_Opening a shared blob_
+
 1. Wait two minutes (time it takes for this SAS token to expire) and press **Ctrl+F5**, as the token is no longer valid, you will not be able to see the image and an error will be displayed.
+
+	![Opening an expired share link](Images/opening-an-expired-share-link.png?raw=true "Opening an expired share link")
+
+	_Opening an expired share link_
 
 <a name="Ex4Task3" />
 #### Task 3 - Adding SAS at Queue level  ####
@@ -1646,7 +1660,27 @@ In this task you will uses SAS at queue level to restrict access to the storage 
 	
 	This code creates an instance of the **CloudQueueClient** class for the specified queue, using the created SAS, and then returns that instance.
 
-1. Press **F5** to run the solution.
+1. Press **F5** to run the application. Once the browser is opened, upload a new image.
+
+1. Open the **Compute Emulator**. To do so, right-click the Windows Azure icon tray and select **Show Compute Emulator UI**.
+
+	![Windows Azure Tray Icon](Images/windows-azure-tray-icon.png?raw=true "Windows Azure Tray Icon")
+
+	_Windows Azure Tray Icon_
+
+1. Select the worker role instance. Wait until the process reads the message from the queue, you should not see any messsages, because as an anonymous user you do not have permissions to add messages to the queue.
+
+	![The queue receives no messages due to insufficient permissions](Images/queue-receives-no-notification.png?raw=true "The queue receives no messages due to insufficient permissions")
+
+	_The queue receives no messages due to insufficient permissions_
+
+1. Log in the application, and upload a new photo. Wait until the process reads the message from the queue and shows the _"Photo uploaded"_ message. As a logged user, you have a SAS with permissions to add messages to the queue.
+
+	![As a logged user, messages will be added to the queue](Images/logged-user-can-add-messages-to-the-queue.png?raw=true "As a logged user, messages will be added to the queue")
+
+	_As a logged user, messages will be added to the queue_
+
+	>**Note:** The create method will always try to add the message to the queue. However, when the user is not authenticated, its SAS does not have sufficient permissions to add messages to the message queue.
 
 <a name="Exercise5" />
 ### Exercise 5: Updating SAS to use Stored Access Policies ###
@@ -1663,7 +1697,7 @@ In this task you will update table security to use stored access signature.
 
 1. Open the begin solution as administrator from **\Source\Ex5-UpdatingSecurityStoredAccessSignature** 
 	
-	>**Note**: If you have completed exercise 4, you can continue with that solution
+	>**Note**: If you have completed exercise 4, you can continue working with that solution.
 
 1. Update **Global.asax.cs** to set the stored access policies for table storage.
 
@@ -1686,7 +1720,7 @@ In this task you will update table security to use stored access signature.
   }
 	````
 
-1. Open **PhotoDataServiceContext.cs** class and replace the _GetSas_ method with the following code.
+1. Open the **PhotoDataServiceContext.cs** class and replace the _GetSas_ method with the following code.
 
 	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex5-GetSasImplementation_)
 
@@ -1711,7 +1745,7 @@ In this task you will update table security to use stored access signature.
 	 }
 	````
 
-1. Open **BaseController.cs** class and update the _OnActionExecuting_ method with the new _GetSas_ method implementation. To do so, replace the if structure code with the following.
+1. Open the **BaseController.cs** class and update the _OnActionExecuting_ method with the new _GetSas_ method implementation. To do so, replace the **if** structure code with the following snippet.
 
 	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex5-GetTableSasOnActionExecuting_)
 	
@@ -1737,7 +1771,7 @@ In this task you will update table security to use stored access signature.
 <a name="Ex5Task2" />
 #### Task 2 - Updating blob security to use stored access policy ####
 
-1. Open the **Global.asax.cs** class and add the following directive
+1. Open the **Global.asax.cs** class and add the following using statement.
 
 	````C#
 	using Microsoft.WindowsAzure.Storage.Blob;
@@ -1761,7 +1795,7 @@ In this task you will update table security to use stored access signature.
  }
 	````
 
-1. Open **PhotoDataServiceContext.cs** class and replace the _GetSasForBlob_ method with the following implementation.
+1. Open the **PhotoDataServiceContext.cs** class and replace the _GetSasForBlob_ method with the following implementation.
 
 	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex5-GetSasForBlobWithStoredAccessPolicy_)
 
@@ -1775,7 +1809,7 @@ In this task you will update table security to use stored access signature.
 
 	````
 
-1. Open **HomeController.cs** class and scroll down to the _Share_ method. Replace the _GetSasForBlob_ method call with the new implementation.
+1. Open the **HomeController.cs** class and scroll down to the _Share_ method. Replace the _GetSasForBlob_ method call with the new implementation.
 
 	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex5-ShareActionWithStoredAccessPolicy_)
 
@@ -1802,7 +1836,7 @@ In this task you will update table security to use stored access signature.
 	}
 	````
 
-1. Update the **HomeController** create method to call the new GetSasForBlob implementation. You will also add some properties and metadata to the blob file in order to check them in the worker role later.
+1. Update the **HomeController**'s **Create** method to call the new **GetSasForBlob** implementation. You will also add some properties and metadata to the blob file in order to check them in the worker role later.
 	
 	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex5-CreateActionWithPropertiesAndMetadata_)
 
@@ -1862,16 +1896,16 @@ In this task you will update table security to use stored access signature.
 	````
 
 <a name="Ex5Task3" />
-#### Task 3 - Updating queue security to use stored access policy ####
+#### Task 3 - Updating queue security to use stored access policies ####
 
-1. Open the **Global.asax.cs** file and add the following directives 
+1. Open the **Global.asax.cs** file and add the following using statements.
 
 	````C#
 	using Microsoft.WindowsAzure.Storage.Queue;
 	using Microsoft.WindowsAzure.Storage.Queue.Protocol;
 	````
 
-1. Update the **Application_Start** method to set the stored access policies for queues storage. You will also add a new metadata called resize and set it to true.
+1. Update the **Application_Start** method to set the stored access policies for queues storage. You will also add a new metadata called **resize** and set it to _true_.
 
 	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex5-QueueStorageWithStoredAccessPolicy_)
 
@@ -1893,7 +1927,7 @@ In this task you will update table security to use stored access signature.
 
 	}
 	````
-1. Open **BaseController.cs** class and locate the _OnActionExecuting_ method. Replace the _GetSharedAccessSingature_ method for queues with the following code.
+1. Open the **BaseController.cs** class and locate the _OnActionExecuting_ method. Replace the _GetSharedAccessSingature_ method for queues with the following code.
 
 	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex5-GetSharedAccessSignatureWithStoredAccessPolicy_)
 
@@ -1909,22 +1943,22 @@ In this task you will update table security to use stored access signature.
 	}
 	````
 
-1. On the **QueueProcessor_WorkerRole** project, open the **WorkerRole.cs** class
+1. On the **QueueProcessor_WorkerRole** project, open the **WorkerRole.cs** class.
 
-1. Add the following directives.
+1. Add the following uing statements.
 
 	````C#
 	using Microsoft.WindowsAzure.Storage.Blob;
 	using Microsoft.WindowsAzure.Storage.Queue.Protocol;
 	````
 
-1. Add the following property to the **WorkerRole** class to store the _CloudBlobContainer_
+1. Add the following member to the **WorkerRole** class to store the _CloudBlobContainer_
 
 	````C#
 	private CloudBlobContainer container;
 	````
 
-1. Create a new method called **CreateCloudBlobClient** in order to create the set the container property. To do so, insert the following code.
+1. Create a new method called **CreateCloudBlobClient** in order to create the set the container variable. To do so, insert the following code.
 	
 	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex5-CreateCloudBlobClientImplementation_)
 
@@ -1939,7 +1973,7 @@ In this task you will update table security to use stored access signature.
 	}
 	````
 
-1. Locate the **OnStart** method and call the **CreateCloudBlobClient** method you reciently created.
+1. In the **OnStart** method, call the **CreateCloudBlobClient** method you have recently created.
 	
 	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex5-CreateCloudBlobClientCall_)
 
@@ -1955,7 +1989,7 @@ In this task you will update table security to use stored access signature.
 	}
 	````
 
-1. Scroll down to the _GetQueueSas_ method. Replace the GetSharedAccessPolicy  method with the following code.
+1. Scroll down to the **GetQueueSas** method. Replace the **GetSharedAccessPolicy** method with the following code.
 
 	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex5-QueueSharedAccessSignatureWithStoredAccessPolicyInWorkerRole_)
 
@@ -1977,7 +2011,7 @@ In this task you will update table security to use stored access signature.
 	}
 	````
 
-1. Add the following code to the _Run_ method in the **WorkerRole** class in order to display the properties and metadata saved in the WebRole. Place them inside the if block, at the begining.
+1. Add the following code to the **Run** method in the **WorkerRole** class in order to display the properties and metadata saved in the WebRole. Place them inside the **if** block, at the begining.
 
 	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex5-RunMethodUpdate_)
 
@@ -2022,13 +2056,13 @@ In this task you will update table security to use stored access signature.
 		}
 	````
 
-1. Go the the Cloud project and right click in **QueueProcessor_WorkerRole** role under **Roles** folder and select **Properties**.
+1. Go the the Cloud project and right-click the **QueueProcessor_WorkerRole** role, located under the **Roles** folder and select **Properties**.
 
 	![WorkerRole Properties](Images/workerrole-properties.png?raw=true "WorkerRole Properties")
 
 	_WorkerRole Properties_
 
-1. Click in the **Settings** tab and add a new setting named _ContainerName_ with type _String_ and value _gallery_
+1. Click the **Settings** tab and add a new setting named _ContainerName_ of _String_ type and value _gallery_.
 
 	![Settings tab](Images/settings-tab2.png?raw=true "Settings tab")
 
@@ -2039,21 +2073,19 @@ In this task you will update table security to use stored access signature.
 <a name="Ex5Task4" />
 #### Task 4 - Verification ####
 
-1. Press **F5** to start with debugging the solution.
+1. Press **F5** to start debugging the solution.
 
-	>**Note**: The Windows Azure Emulator should start
+	>**Note**: The Windows Azure Emulator should start.
 
 1. Login to the application with the user you created in Exercise 3.
 
-1. Click in **Share** link in one of the private photos you've uploaded before.
+1. Click the **Share** link in one of the private photos you've uploaded before.
 
 	![Sharing a photo with Stored Access Policy](Images/sharing-a-photo-with-stored-access-policy.png?raw=true "Sharing a photo with Stored Access Policy")
 
 	_Sharing a photo with Stored Access Policy_
 
 	>**Note**: Notice how there's a new parameter in the query string named _si_ that has the value _read_ which is the Signed Identifier.
-
-
 
 ---
 
