@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Web;
-using Microsoft.WindowsAzure.Storage.Blob;
 using Microsoft.WindowsAzure.Storage.Table;
 using Microsoft.WindowsAzure.Storage.Table.DataServices;
+using Microsoft.WindowsAzure.Storage.Blob;
+using System.Globalization;
 
 namespace PhotoUploader_WebRole.Models
 {
@@ -72,18 +72,6 @@ namespace PhotoUploader_WebRole.Models
                 TableOperation deleteOperation = TableOperation.Delete(deleteEntity);
                 table.Execute(deleteOperation);
             }
-
-        }
-
-        public string GetSaSForBlob(CloudBlockBlob blob, SharedAccessBlobPermissions permission)
-        {
-            var sas = blob.GetSharedAccessSignature(new SharedAccessBlobPolicy()
-            {
-                Permissions = permission,
-                SharedAccessStartTime = DateTime.UtcNow.AddMinutes(-5),
-                SharedAccessExpiryTime = DateTime.UtcNow.AddMinutes(2),
-            });
-            return string.Format(CultureInfo.InvariantCulture, "{0}{1}", blob.Uri, sas);
         }
 
         public string GetSas(string partition, SharedAccessTablePermissions permissions)
@@ -103,6 +91,17 @@ namespace PhotoUploader_WebRole.Models
                 null     /* end row key */);
 
             return sasToken;
+        }
+
+        public string GetSasForBlob(CloudBlockBlob blob, SharedAccessBlobPermissions permission)
+        {
+            var sas = blob.GetSharedAccessSignature(new SharedAccessBlobPolicy()
+                {
+                    Permissions = permission,
+                    SharedAccessStartTime = DateTime.UtcNow.AddMinutes(-5),
+                    SharedAccessExpiryTime = DateTime.UtcNow.AddMinutes(2),
+                });
+            return string.Format(CultureInfo.InvariantCulture, "{0}{1}", blob.Uri, sas);
         }
     }
 }

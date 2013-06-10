@@ -8,7 +8,7 @@ namespace PhotoUploader_WebRole.Models
 {
     public class PhotoEntity : TableEntity
     {
-        public PhotoEntity() 
+        public PhotoEntity()
         {
             PartitionKey = "Public";
             RowKey = Guid.NewGuid().ToString();
