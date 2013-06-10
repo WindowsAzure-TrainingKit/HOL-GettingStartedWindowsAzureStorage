@@ -22,7 +22,7 @@ namespace PhotoUploader_WebRole.Controllers
         //
         // GET: /Home/Details/5
 
-        public ActionResult Details(string id)
+        public ActionResult Details(string partitionKey, string rowKey)
         {
             return View();
         }
@@ -46,7 +46,7 @@ namespace PhotoUploader_WebRole.Controllers
         //
         // GET: /Home/Edit/5
 
-        public ActionResult Edit(string id)
+        public ActionResult Edit(string partitionKey, string rowKey)
         {
             return View();
         }
@@ -56,7 +56,7 @@ namespace PhotoUploader_WebRole.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Edit(PhotoEntity photo, FormCollection collection)
+        public ActionResult Edit(PhotoViewModel photoViewModel, FormCollection collection)
         {
             return View();
         }
@@ -64,7 +64,7 @@ namespace PhotoUploader_WebRole.Controllers
         //
         // GET: /Home/Delete/5
 
-        public ActionResult Delete(string id)
+        public ActionResult Delete(string partitionKey, string rowKey)
         {
             return View();
         }
@@ -74,7 +74,7 @@ namespace PhotoUploader_WebRole.Controllers
 
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public ActionResult DeleteConfirmed(string id)
+        public ActionResult DeleteConfirmed(string partitionKey, string rowKey)
         {
             return View();
         }

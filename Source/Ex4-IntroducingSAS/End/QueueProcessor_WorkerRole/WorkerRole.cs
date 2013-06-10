@@ -9,8 +9,8 @@ using Microsoft.WindowsAzure.Diagnostics;
 using Microsoft.WindowsAzure.ServiceRuntime;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Queue;
-using Microsoft.WindowsAzure.Storage.Queue.Protocol;
 using Microsoft.WindowsAzure.Storage.Auth;
+
 
 namespace QueueProcessor_WorkerRole
 {
@@ -31,7 +31,7 @@ namespace QueueProcessor_WorkerRole
                 Thread.Sleep(10000);
                 Trace.TraceInformation("Working", "Information");
              
-                if (DateTime.UtcNow.AddMinutes(-1) >= this.serviceQueueSasExpiryTime)
+                if (DateTime.UtcNow.AddMinutes(1) >= this.serviceQueueSasExpiryTime)
                 {
                     queueClient = new CloudQueueClient(this.uri, new StorageCredentials(this.GetQueueSas()));
                     queue = queueClient.GetQueueReference("messagequeue");

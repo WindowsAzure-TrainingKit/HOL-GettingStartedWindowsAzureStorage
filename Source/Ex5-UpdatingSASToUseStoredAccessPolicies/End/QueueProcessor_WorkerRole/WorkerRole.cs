@@ -95,9 +95,8 @@ namespace QueueProcessor_WorkerRole
             queue.SetPermissions(qp);
 
             var token = queue.GetSharedAccessSignature(
-                       new SharedAccessQueuePolicy() { },
-                       "process");
-
+                         new SharedAccessQueuePolicy(),
+                            "process");
             this.serviceQueueSasExpiryTime = DateTime.UtcNow.AddMinutes(15);
             return token;
         }

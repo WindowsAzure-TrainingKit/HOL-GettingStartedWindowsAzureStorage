@@ -100,8 +100,6 @@ In this task you will learn how to create a new Storage Account using the Manage
 	_Logging to the Management Portal_
 
 1. In the menu located at the bottom, select **New | Data Services | Storage | Quick Create** to start creating a new Storage Account. Enter an unique name for the account and select a **Region** from the list. Click **OK** to continue.
-
-
 	![create-storage-account-menu](Images/create-storage-account-menu.png?raw=true)
 
 	_Creating a new storage account_
@@ -298,7 +296,7 @@ In this task you will configure the _storage connection string_ of the applicati
 
 1. Click **OK** to update the connection string.
 
-1. Repeat the previous steps to configure the _StorageConnectionString_ for the **PhotoUploader_WorkerRole**.
+1. Repeat the previous steps to configure the _StorageConnectionString_ for the **QueueProcessor_WorkerRole**.
 
 <a name="Ex3Task2" />
 #### Task 2 - Working with Table Storage ####
@@ -927,8 +925,7 @@ In this task, you will use queues to simulate a notification service, where a me
 
 1. The worker role will read the **Queue** for notification messages. First, you need to get a queue reference. To do this, add following highlighted code in the **Run** method.
 
-	(Code Snippet - _GettingStartedWindowsAzureStorage - Ex3-QueueWorkerAccount)
-
+	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex3-QueueWorkerAccount_)
 	<!-- mark:6-11 -->
 	````C#
 	public override void Run()
@@ -1042,7 +1039,7 @@ In this task, you will use Visual Studio to inspect the Windows Azure Storage Ac
 <a name="Exercise4" />
 ### Exercise 4: Introducing SAS (Shared Access Signature) ###
 
-Shared Access Signatures allow granular access to tables, queues, blob containers, and blobs. A SAS token can be configured to provide specific access rights, such as read, write, update, delete, etc. to a specific table, key range within a table, queue, blob, or blob container; for a specified time period or without any limit. The SAS token appears as part of the resource’s URI as a series of query parameters.
+Shared Access Signatures allow granular access to tables, queues, blob containers, and blobs. A SAS token can be configured to provide specific access rights, such as read, write, update, delete, etc. to a specific table, key range within a table, queue, blob, or blob container; for a specified time period or without any limit. The SAS token appears as part of the resource's URI as a series of query parameters.
 
 In this exercise you will learn how to use Shared Access Signatures with the three storage abstractions: Tables, Blobs, and Queues.
 
@@ -1058,7 +1055,8 @@ You can grant access to an entire table, to a table range (for example, to all t
 1. Open the **PhotoEntity** class, located in the _Models_ folder.
 
 1. Modify the default constructor to use _"Public"_ as the partiton key by default, and add an overloaded constructor that receives a partition key as a parameter.
-
+	
+	(Code Snippet - _GettingStarteWindowsAzrueStorage_ - _Ex4-UpdatePhotoEntityConstructors_)
 	<!-- mark:5, 9-13 -->
 	````C#
 	public class PhotoEntity : TableEntity
@@ -1079,9 +1077,11 @@ You can grant access to an entire table, to a table range (for example, to all t
 	}
 	````
 
-1. Open the _PhotoDataServiceContext.cs_ file and locate the **GetSas** method. Paste the following code in the method's body.
+1. Open the _PhotoDataServiceContext.cs_ file and locate the **GetSas** method. Replace the entire method with this new implementation.
 
-	<!-- mark:3-17 -->
+	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex4-NewImplementationGetSasMethod_)
+
+	<!-- mark:1-18 -->
 	````C#
 	public string GetSas(string partition, SharedAccessTablePermissions permissions)
 	{
@@ -1102,109 +1102,107 @@ You can grant access to an entire table, to a table range (for example, to all t
 		return sasToken;
 	}
 	````
-This method takes the partition and the permissions passed as parameters and creates a SAS for the _Photos_ table. This SAS will grant the specified permissions only to the rows that correspond to that partition. Finally, it returns the SAS in string format.
+	> **Note**: This method takes the partition and the permissions passed as parameters and creates a SAS for the _Photos_ table. This SAS will grant the specified permissions only to the rows that correspond to that partition. Finally, it returns the SAS in string format.
 
-1. Open the _AccountController.cs_ file, located in the _Controllers_ folder.
+1. Go to the controller folder and create a new base controller. To do so, right click in the controller folder, go to **add** and select **controller**.
 
-1. Go to the Post version of the **Login** method, and add the following code.
+1. Name the file **BaseController** and click **OK**.
 
-	<!-- mark:8-12 -->
+	![BaseController creation](Images/basecontroller-creation.png?raw=true "BaseController creation")
+
+	_BaseController creation_
+
+1. Remove the _index_ method created by default.
+
+1. Add the following using statements to the **BaseController** class.
+	
+	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex4-BaseControllerUsingStatements_)
+
+	<!-- mark:1-4 -->
 	````C#
-	[HttpPost]
-	[AllowAnonymous]
-	[ValidateAntiForgeryToken]
-	public ActionResult Login(LoginModel model, string returnUrl)
-	{
-		if (ModelState.IsValid && WebSecurity.Login(model.UserName, model.Password, persistCookie: model.RememberMe))
-		{
-			CloudTableClient cloudTableClientAdmin = this.StorageAccount.CreateCloudTableClient();
-			var photoContextAdmin = new PhotoDataServiceContext(cloudTableClientAdmin);
-			Session["MySas"] = photoContextAdmin.GetSas(model.UserName, SharedAccessTablePermissions.Add | SharedAccessTablePermissions.Delete | SharedAccessTablePermissions.Query | SharedAccessTablePermissions.Update);
-			Session["Sas"] = photoContextAdmin.GetSas("Public", SharedAccessTablePermissions.Add | SharedAccessTablePermissions.Delete | SharedAccessTablePermissions.Query | SharedAccessTablePermissions.Update);
-			Session["ExpireTime"] = DateTime.UtcNow.AddMinutes(15);
-			return RedirectToLocal(returnUrl);
-		}
-
-		// If we got this far, something failed, redisplay form
-		ModelState.AddModelError("", "The user name or password provided is incorrect.");
-		return View(model);
-	}
+	using Microsoft.WindowsAzure;
+	using Microsoft.WindowsAzure.Storage;
+	using Microsoft.WindowsAzure.Storage.Table;
+	using PhotoUploader_WebRole.Models;
 	````
 
-	The preceding code uses the **PhotoDataServiceContext** class to generate two SAS, one for accessing _Public_ rows, and the other for accessings the rows that correspond to the logged user. Additionally, the _ExpireTime_ of the tokens is saved too.
+1. Add the following public properties to the **BaseController**.
+	
+	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex4-BaseControllerProperties_)
 
-	> **Note:** The public and private tokens, as well as their expiration time are saved as Session variables, that live only for the current application session.
-
-1. Go to the **Register** method and update the code as shown in the following snippet.
-
-	<!-- mark:13-17 -->
+	<!-- mark:1-4 -->
 	````C#
-	[HttpPost]
-	[AllowAnonymous]
-	[ValidateAntiForgeryToken]
-	public ActionResult Register(RegisterModel model)
-	{
-		if (ModelState.IsValid)
-		{
-			// Attempt to register the user
-			try
-			{
-				WebSecurity.CreateUserAndAccount(model.UserName, model.Password);
-				WebSecurity.Login(model.UserName, model.Password);
-				CloudTableClient cloudTableClientAdmin = this.StorageAccount.CreateCloudTableClient();
-				var photoContextAdmin = new PhotoDataServiceContext(cloudTableClientAdmin);
-				Session["MySas"] = photoContextAdmin.GetSas(model.UserName, SharedAccessTablePermissions.Add | SharedAccessTablePermissions.Delete | SharedAccessTablePermissions.Query | SharedAccessTablePermissions.Update);
-				Session["Sas"] = photoContextAdmin.GetSas("Public", SharedAccessTablePermissions.Add | SharedAccessTablePermissions.Delete | SharedAccessTablePermissions.Query | SharedAccessTablePermissions.Update);
-				Session["ExpireTime"] = DateTime.UtcNow.AddMinutes(15);
-				return RedirectToAction("Index", "Home");
-			}
-			catch (MembershipCreateUserException e)
-			{
-			ModelState.AddModelError("", ErrorCodeToString(e.StatusCode));
-			}
-		}
-
-		// If we got this far, something failed, redisplay form
-		return View(model);
-	}
+	public CloudStorageAccount StorageAccount = CloudStorageAccount.Parse(CloudConfigurationManager.GetSetting("StorageConnectionString"));
+	public Uri UriTable = new Uri("http://127.0.0.1:10002/devstoreaccount1");
+	public string AuthenticatedTableSas { get; set; }
+	public string PublicTableSas { get; set; }
 	````
 
-1. Finally, to complete the changes in the **AccountController** class, update the **LogOff** method to clear the private SAS and expiration time, as shown in the following code.
+	>**Note**: Replace the _http://127.0.0.1:10002/devstoreaccount1_ with your storage table account uri in order to work against Windows Azure.
 
-	<!-- mark:7-8 -->
+1. Override the **OnActionExecuting** method in the **BaseController** class.
+	
+	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex4-BaseControllerOnActionExecutingMethod_)
+
+	<!-- mark:1-16 -->
 	````C#
-	[HttpPost]
-	[ValidateAntiForgeryToken]
-	public ActionResult LogOff()
-	{
-		WebSecurity.Logout();
+	protected override void OnActionExecuting(ActionExecutingContext filterContext)
+  {
+		CloudTableClient cloudTableClientAdmin = this.StorageAccount.CreateCloudTableClient();
+		var photoContextAdmin = new PhotoDataServiceContext(cloudTableClientAdmin);
 
-		Session["ExpireTime"] = null;
-		Session["MySas"] = null;
-
-		return RedirectToAction("Index", "Home");
-	}
+		if (this.User.Identity.IsAuthenticated)
+		{
+			 this.AuthenticatedTableSas = photoContextAdmin.GetSas(this.User.Identity.Name, SharedAccessTablePermissions.Add | SharedAccessTablePermissions.Delete | SharedAccessTablePermissions.Query | SharedAccessTablePermissions.Update);
+			 this.PublicTableSas = photoContextAdmin.GetSas("Public", SharedAccessTablePermissions.Add | SharedAccessTablePermissions.Delete | SharedAccessTablePermissions.Query | SharedAccessTablePermissions.Update);
+		}
+		else
+		{
+			 this.PublicTableSas = photoContextAdmin.GetSas("Public", SharedAccessTablePermissions.Add | SharedAccessTablePermissions.Update | SharedAccessTablePermissions.Query);
+			 this.AuthenticatedTableSas = null;
+		}
+  }
 	````
 
 1. Open the **HomeController** class, located in the _Controllers_ folder.
 
-1. At the top of the class, locate the private variable named **UriTable**. This variable holds a reference to the URI of your table storage. By default is pointing to the local storage emulator, however, it is recommended to upate this value with the URI of your Azure Table Storage account.
+1. Update the **HomeController** in order to inheritate from **BaseController** and remove the **StorageAccount** property.
 
 	````C#
-	private Uri UriTable = new Uri("http://127.0.0.1:10002/devstoreaccount1");
+	public class HomeController : BaseController
+	{
+		//
+		// GET: /
+
+		public ActionResult Index()
+		{	
+			...
+		}
+		...
+	}
+       
 	````
 
-1. Go to the **Index** method and replace its content with the following code, that creates the **CloudTableClient** instances using the SAS tokens, and retrieves all the public photos, and also the private photos of the logged user, if any.
+1. Add the following using to the **HomeController**.
 
+	````C#
+	using Microsoft.WindowsAzure.Storage.Auth;
+	using System.Collections.Generic;
+	````
+
+1. Replace the **Index** action with the following code.
+
+	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex4-HomeControllerIndexAction_)
+	
 	<!-- mark:3-27 -->
 	````C#
 	public ActionResult Index()
 	{
-		CloudTableClient cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(Session["Sas"].ToString()));
+		CloudTableClient cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(this.PublicTableSas));
 		var photoContext = new PhotoDataServiceContext(cloudTableClient);
 		var photoList = new List<PhotoViewModel>();
 
-		var photos = photoContext.GetPhotos("Public");
+		var photos = photoContext.GetPhotos();
 		if (photos.Count() > 0)
 		{
 			photoList = photos.Select(x => this.ToViewModel(x)).ToList();
@@ -1214,10 +1212,10 @@ This method takes the partition and the permissions passed as parameters and cre
 
 		if (this.User.Identity.IsAuthenticated)
 		{
-			cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(Session["MySas"].ToString()));
+			cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(this.AuthenticatedTableSas));
 			photoContext = new PhotoDataServiceContext(cloudTableClient);
 
-			photos = photoContext.GetPhotos(this.User.Identity.Name);
+			photos = photoContext.GetPhotos();
 			if (photos.Count() > 0)
 			{
 				photoList.AddRange(photos.Select(x => this.ToViewModel(x)).ToList());
@@ -1227,142 +1225,70 @@ This method takes the partition and the permissions passed as parameters and cre
 		return this.View(photoList);
 	}
 	````
+1. Scroll down to the **Details** action and update the _CloudTableClient_ creation method with the following code. 
 
-1. Locate the **Details** action method, and replace its content with the following code, that queries the storage table passing the corresponding SAS, depending on if the photo is public or private.
+	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex4-NewCloudTableClientCall_)
 
-	<!-- mark:3-34 -->
+	<!-- mark:1-2 -->
 	````C#
-	public ActionResult Details(string partitionKey, string rowKey)
-	{
-		CloudTableClient cloudTableClient;
-		PhotoEntity photo;
-
-		if (partitionKey == "Public")
-		{
-			cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(Session["Sas"].ToString()));
-			var photoContext = new PhotoDataServiceContext(cloudTableClient);
-			photo = photoContext.GetById(partitionKey, rowKey);
-			if (photo == null)
-			{
-				return this.HttpNotFound();
-			}
-		}
-		else
-		{
-			cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(Session["MySas"].ToString()));
-			var photoContext = new PhotoDataServiceContext(cloudTableClient);
-
-			photo = photoContext.GetById(this.User.Identity.Name, rowKey);
-			if (photo == null)
-			{
-				return this.HttpNotFound();
-			}
-		}
-
-		var viewModel = this.ToViewModel(photo);
-		if (!string.IsNullOrEmpty(photo.BlobReference))
-		{
-			viewModel.Uri = this.GetBlobContainer().GetBlockBlobReference(photo.BlobReference).Uri.ToString();
-		}
-
-		return this.View(viewModel);
-	}
+	var token = partitionKey == "Public" ? this.PublicTableSas : this.AuthenticatedTableSas;
+	CloudTableClient cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(this.PublicTableSas));
 	````
 
-1. Browse to the POST version of the **Create** action method, locate the line where the partition key is assigned to the _photoViewModel_ instance, and replace it with the following code.
+1. Repeate the previous step in the **Edit** and **Delete** _GET_ actions and in the **Delete** _Post_ action.
 
-	<!-- mark:6 -->
+1. Locate the **Create** _Post_ action and update the _photoViewModel_ partitionKey with the following.
+
 	````C#
-	[HttpPost]
-	public ActionResult Create(PhotoViewModel photoViewModel, HttpPostedFileBase file, bool Public, FormCollection collection)
-	{
-		if (this.ModelState.IsValid)
-		{
-			photoViewModel.PartitionKey = Public ? "Public" : this.User.Identity.Name;
-			....
-		}
-	}
+	photoViewModel.PartitionKey = Public ? "Public" : this.User.Identity.Name;
 	````
 
-1. In the same method, locate the section that saves the information to the table storage, which is marked by a comment, and replace its content with the following code. This code determines if the public or private SAS will be used to add the row to the table storage.
+1. Locate the _CloudTableClient_ creation in the **Create** _Post_ action and replace it with the following code.
 
-	<!-- mark:2-12 -->
+	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex4-CreatePostActionUpdate_)
+
+	<!-- mark:1-8 -->
 	````C#
-	//Save information to Table Storage
-	var sasKey = Public ? "Sas" : "MySas";
+	var token = Public ? this.PublicTableSas : this.AuthenticatedTableSas;
 	if (!this.User.Identity.IsAuthenticated)
 	{
-		sasKey = "Sas";
+		token = this.PublicTableSas;
 		photo.PartitionKey = "Public";
 	}
-
-	CloudTableClient cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(Session[sasKey].ToString()));
-	var photoContext = new PhotoDataServiceContext(cloudTableClient);
-
-	photoContext.AddPhoto(photo);
-	````
-
-1. Replace the **CloudTableClient** assignation with the following code, in these methods: _[GET] Edit_, _[POST] Edit_, _[GET] Delete_, _[GET] Delete_.
-
-	````C#
-	string token = partitionKey == "Public" ? Session["Sas"].ToString() : Session["MySas"].ToString();
 
 	CloudTableClient cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(token));
 	````
 
-1. Go to the **RefreshCredentials** method, and add the following code as the method's body.
+1. Update the **Create** _Post_ action in order to have a recieve a new bool parameter called Public.
 
-	<!-- mark:3-21 -->
 	````C#
-	public void RefreshAccessCredentials()
+	[HttpPost]
+	public ActionResult Create(PhotoViewModel photoViewModel, HttpPostedFileBase file, bool Public, FormCollection collection)
 	{
-		if ((Session["ExpireTime"] as DateTime? == null) || ((DateTime)Session["ExpireTime"] < DateTime.UtcNow))
-		{
-			CloudTableClient cloudTableClientAdmin = this.StorageAccount.CreateCloudTableClient();
-			var photoContextAdmin = new PhotoDataServiceContext(cloudTableClientAdmin);
-
-			Session["Sas"] = photoContextAdmin.GetSas("Public", SharedAccessTablePermissions.Add | SharedAccessTablePermissions.Update | SharedAccessTablePermissions.Query);
-			Session["QueueSas"] = this.StorageAccount.CreateCloudQueueClient().GetQueueReference("messagequeue").GetSharedAccessSignature(
-				new SharedAccessQueuePolicy() { Permissions = SharedAccessQueuePermissions.Add | SharedAccessQueuePermissions.Read, SharedAccessExpiryTime = DateTime.UtcNow.AddMinutes(15) },
-					null
-				);
-
-			if (this.User.Identity.IsAuthenticated)
-			{
-				Session["MySas"] = photoContextAdmin.GetSas(this.User.Identity.Name, SharedAccessTablePermissions.Add | SharedAccessTablePermissions.Delete | SharedAccessTablePermissions.Query | SharedAccessTablePermissions.Update);
-				Session["Sas"] = photoContextAdmin.GetSas("Public", SharedAccessTablePermissions.Add | SharedAccessTablePermissions.Delete | SharedAccessTablePermissions.Query | SharedAccessTablePermissions.Update);
-			}
-
-			Session["ExpireTime"] = DateTime.UtcNow.AddMinutes(15);
-		}
-	}
-	````
-	The preceding code checks if the stored expiration time is valid, and if not, it will generate a new valid SAS for public access, and if a user is logged in, for private access too.
-
-1. Since you need a valid token to perform every operation on this controller, add a call to the **RefreshAccessCredentials** method at the top of all the public actions of the **HomeController** class, even the ones that have empty bodies. This is shown in the following code.
-
-	<!-- mark:3 -->
-	````C#
-	public ActionResult Index()
-	{
-		this.RefreshAccessCredentials();
-
 		...
-
 	}
 	````
 
-	>**Note:** You have to add the call the **RefreshAccessCredentials** to the following methods of the **HomeController** class: _Index_, _Details_, _[Get] Create_, _[Post] Create_, _[Get] Edit_, _[Post] Edit_, _[Get] Delete_, _[Post] Delete_, _ToPrivate_, _ToPublic_, and _Share_.
+1. Scroll down to the **Edit** _Post_ action and update the _CloudTableClient_ creation with the following code.
 
-1. Go to the **ToPublic** method and add the following code in its body. This method will delete a private blob (one created with a username as the partition key) and it will re-create it with "Public" as the partition key.
+	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex4-ewCloudTableClientCall-EditPost_)
 
-	<!-- mark:5-20 -->
+	<!-- mark:1-2 -->
+	````C#
+	var token = photoViewModel.PartitionKey == "Public" ? this.PublicTableSas : this.AuthenticatedTableSas;
+	CloudTableClient cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(token));
+	````
+
+1. Create a new action called **ToPublic** and add the following code in its body. This method will delete a private blob (one created with a username as the partition key) and it will re-create it with "Public" as the partition key.
+
+	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex4-ToPublicMethod_)
+
+	<!-- mark:1-20 -->
 	````C#
 	[HttpGet]
 	public ActionResult ToPublic(string partitionKey, string rowKey)
 	{
-		this.RefreshAccessCredentials();
-		CloudTableClient cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(Session["MySas"].ToString()));
+		CloudTableClient cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(this.AuthenticatedTableSas));
 		var photoContext = new PhotoDataServiceContext(cloudTableClient);
 		var photo = photoContext.GetById(partitionKey, rowKey);
 		if (photo == null)
@@ -1372,7 +1298,7 @@ This method takes the partition and the permissions passed as parameters and cre
 
 		photoContext.DeletePhoto(photo);
 
-		cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(Session["Sas"].ToString()));
+		cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(this.PublicTableSas));
 		photoContext = new PhotoDataServiceContext(cloudTableClient);
 		photo.PartitionKey = "Public";
 		photoContext.AddPhoto(photo);
@@ -1381,15 +1307,16 @@ This method takes the partition and the permissions passed as parameters and cre
 	}
 	````
 
-1. Go to the **ToPrivate** method, and add the following code in the method's body. As opposite to the **ToPublic** method, this one will remove the photo's row from the _Public_ partition key and re-add it to the logged user partition. Therefore, this method needs a logged user to work.
+1. On the same way,  create a new action called **ToPrivate**, and add the following code in the method's body. As opposite to the **ToPublic** method, this one will remove the photo's row from the _Public_ partition key and re-add it to the logged user partition. Therefore, this method needs a logged user to work.
 
-	<!-- mark:5-20 -->
+	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex4-ToPrivateMethod_)
+
+	<!-- mark:1-20 -->
 	````C#
 	[HttpGet]
 	public ActionResult ToPrivate(string partitionKey, string rowKey)
 	{
-		this.RefreshAccessCredentials();
-		CloudTableClient cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(Session["Sas"].ToString()));
+		CloudTableClient cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(this.PublicTableSas));
 		var photoContext = new PhotoDataServiceContext(cloudTableClient);
 		var photo = photoContext.GetById(partitionKey, rowKey);
 		if (photo == null)
@@ -1399,7 +1326,7 @@ This method takes the partition and the permissions passed as parameters and cre
 
 		photoContext.DeletePhoto(photo);
 
-		cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(Session["MySas"].ToString()));
+		cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(this.AuthenticatedTableSas));
 		photoContext = new PhotoDataServiceContext(cloudTableClient);
 		photo.PartitionKey = this.User.Identity.Name;
 		photoContext.AddPhoto(photo);
@@ -1408,9 +1335,11 @@ This method takes the partition and the permissions passed as parameters and cre
 	}
 	````
 
-1. Open the **Index.cshtml* file, located in the _Views/Home_ folder.
+1. Open the **Index.cshtml** file, located in the _Views/Home_ folder.
 
 1. Locate the _foreach_ statement, and add the following code at the end of the **tr** element. This code will add the _To Public_ and _To Private_ links next to each photo when corresponds.
+
+	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex4-IndexViewUpdate_)
 
 	<!-- mark:11-21 -->
 	````HTML
@@ -1443,6 +1372,8 @@ This method takes the partition and the permissions passed as parameters and cre
 
 1. Add the following **if** statement before the **input** element. This code adds a checkbox to upload the new photo as public if the user is authenticated. If it is not authenticated, the photo will be uploaded as public by default.
 
+	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex4-CreateViewUpdate_)
+
 	<!-- mark:5-14 -->
 	````HTML
 	<div>
@@ -1461,7 +1392,7 @@ This method takes the partition and the permissions passed as parameters and cre
 	}
 	<input type="submit" value="Create" />
 	````
-1. Run the application by pressing **F5**.
+1. Run the solution by pressing **F5**.
 
 1. If you previously upload a photo, you will be able to see them listed; otherwise upload a new photo by clicking the **Create** link. The listed photos are public and can be seen by all application users, even if they are not authenticated.
 
@@ -1491,11 +1422,20 @@ This method takes the partition and the permissions passed as parameters and cre
 
 In this task you will learn how to create SAS for Azure Blobs. SAS can be created for blobs and for blobs containers. SAS tokens can be used on blogs to read, update and delete the specified blob. Regarding blob containers, SAS tokens can be used to list the content of the container, and to create, read, update and delete blobs in it.
 
-1. Open the _PhotoDataServiceContext.cs_ file and locate the **GetSasForBlob** method. Paste the following code in the method's body.
-
-	<!-- mark:3-9 -->
+1. Open the _PhotoDataServiceContext.cs_ file and add the following using.
+	
 	````C#
-	public string GetSaSForBlob(CloudBlockBlob blob, SharedAccessBlobPermissions permission)
+	using Microsoft.WindowsAzure.Storage.Blob;
+	using System.Globalization;
+	````
+
+1. Create a new method called **GetSasForBlob**. Paste the following code in the method's body.
+
+	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex4-GetSasForBlobMethod_)
+
+	<!-- mark:1-10 -->
+	````C#
+	public string GetSasForBlob(CloudBlockBlob blob, SharedAccessBlobPermissions permission)
    {
 		var sas = blob.GetSharedAccessSignature(new SharedAccessBlobPolicy()
 			{
@@ -1506,9 +1446,11 @@ In this task you will learn how to create SAS for Azure Blobs. SAS can be create
 		return string.Format(CultureInfo.InvariantCulture, "{0}{1}", blob.Uri, sas);
 	}
 	````
-This method takes a block blob reference and creates a Blob SAS for it, with the permissions passed as parameters. Finally, it returns the SAS in string format.
+	> **Note**: This method takes a block blob reference and creates a Blob SAS for it, with the permissions passed as parameters. Finally, it returns the SAS in string format.
 
 1. Open the _Index.cshtml_ located in the _Views\Home_ folder, and add the following code, that adds the share link to private blobs, at the end of the **else** statement.
+
+	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex4-IndexViewUpdateWithShareLink_)
 
 	<!-- mark:11 -->
 	````HTML
@@ -1530,21 +1472,19 @@ This method takes a block blob reference and creates a Blob SAS for it, with the
 
 1. Open the _HomeController.cs_ file, located in the _Controllers_ folder.
 
-1. Paste the following code inside the **Share** method.
+1. Create a new **Share** action in the _HomeController_ class.
 
-	<!-- mark:4-29 -->
+	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex4-ShareAction_)
+
+	<!-- mark:1-26 -->
 	````C#
 	[HttpGet]
 	public ActionResult Share(string partitionKey, string rowKey)
 	{
-		this.RefreshAccessCredentials();
-
-		PhotoEntity photo;
-
-		var cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(Session["MySas"].ToString()));
+		var cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(this.AuthenticatedTableSas));
 		var photoContext = new PhotoDataServiceContext(cloudTableClient);
 
-		photo = photoContext.GetById(partitionKey, rowKey);
+		PhotoEntity photo = photoContext.GetById(partitionKey, rowKey);
 		if (photo == null)
 		{
 			return this.HttpNotFound();
@@ -1567,6 +1507,10 @@ This method takes a block blob reference and creates a Blob SAS for it, with the
 	````
 	The preceding code gets the blob reference by using the partition and row keys, and calls the **GetSasForBlob** method passing the reference and the permissions as parameters. In this case, the SAS is created with **Read** permissions.
 
+1. You will now add the corresponding view to the previously created action. To do so, right click in the **Home** folder under **Views**, go to **Add** and select **Existing Item**.
+
+1. Browse to the **Assets/Ex4-IntroducingSAS** folder, select the **Share.cshtml** view and click **Add**.
+
 1. Run the solution by pressing **F5**.
 
 1. Log into the application. If you do not have an user, register to create one.
@@ -1579,10 +1523,9 @@ This method takes a block blob reference and creates a Blob SAS for it, with the
 
 1. Wait two minutes (time it takes for this SAS token to expire) and press **Ctrl+F5**, as the token is no longer valid, you will not be able to see the image and an error will be displayed.
 
-
-
 <a name="Ex4Task3" />
 #### Task 3 - Adding SAS at Queue level  ####
+
 In this task you will uses SAS at queue level to restrict access to the storage queues. SAS can enable Read, Add, Process, and Update permissions on the queue.
 
 1. In the **QueueProcessor_WorkerRole** project, open the **WorkerRole** class.
@@ -1602,6 +1545,8 @@ In this task you will uses SAS at queue level to restrict access to the storage 
 	````
 
 1. Locate the **GetQueueSas** method, and the following code in its body.
+
+	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex4-GetQueueSasUpdate_)
 
 	<!-- mark:3-12 -->
 	````C#
@@ -1623,6 +1568,8 @@ In this task you will uses SAS at queue level to restrict access to the storage 
 	This method gets a reference to the application's queue and generates a SAS token that has permissions to process, read, add, and update messages.
 
 1. Browse to the **Run** method and replace its body with the following code.
+
+	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex4-RunMethodUpdate_)
 
 	<!-- mark:3-26 -->
 	````C#
@@ -1655,42 +1602,42 @@ In this task you will uses SAS at queue level to restrict access to the storage 
 	}
 	````
 
-1. Open the **AccountController** class located in the _Controllers_ folder of the **PhotoUploader_WebRole** project. Add the following line of code in the **Login** and **Register** methods, after saving the other SAS in session variables.
+1. Open the **BaseController** class located in the _Controllers_ folder of the **PhotoUploader_WebRole** project and add the following directives.
 
 	````C#
-	Session["QueueSas"] = this.StorageAccount.CreateCloudQueueClient().GetQueueReference("messagequeue").GetSharedAccessSignature(
-                        new SharedAccessQueuePolicy() { Permissions = SharedAccessQueuePermissions.Add | SharedAccessQueuePermissions.Read, SharedAccessExpiryTime = DateTime.UtcNow.AddMinutes(15) },
-                        null
-                        );
+	using Microsoft.WindowsAzure.Storage.Queue;
 	````
 
-1. Open the **HomeController** class, and browse to the **RefreshCredentials** method. Add the following line of code inside the method, after saving the _Public table SAS_ in a session variable.
+1. Add the following public properties to the **BaseController** class.
 
-	<!-- mark:9-12 -->
 	````C#
-	public void RefreshAccessCredentials()
-	{
-		if ((Session["ExpireTime"] as DateTime? == null) || ((DateTime)Session["ExpireTime"] < DateTime.UtcNow))
-		{
-			CloudTableClient cloudTableClientAdmin = this.StorageAccount.CreateCloudTableClient();
-			var photoContextAdmin = new PhotoDataServiceContext(cloudTableClientAdmin);
+	public Uri UriQueue = new Uri("http://127.0.0.1:10001/devstoreaccount1");
+   public string QueueSas { get; set; }
+	````
 
-			Session["Sas"] = photoContextAdmin.GetSas("Public", SharedAccessTablePermissions.Add | SharedAccessTablePermissions.Update | SharedAccessTablePermissions.Query);
-			Session["QueueSas"] = this.StorageAccount.CreateCloudQueueClient().GetQueueReference("messagequeue").GetSharedAccessSignature(
-                        new SharedAccessQueuePolicy() { Permissions = SharedAccessQueuePermissions.Add | SharedAccessQueuePermissions.Read, SharedAccessExpiryTime = DateTime.UtcNow.AddMinutes(15) },
-                        null
-                        );
-			...
-		}
-	}
+	>**Note**: In order to work against windows azure, you should update the Uri queue with the one in azure.
+
+1. Add the following line of code in the **OnActionExecuting** method.
+
+	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex4-QueueSharedAccessSignature_)
+
+	<!-- mark:1-4 -->
+	````C#
+	this.QueueSas = this.StorageAccount.CreateCloudQueueClient().GetQueueReference("messagequeue").GetSharedAccessSignature(
+                       new SharedAccessQueuePolicy() { Permissions = SharedAccessQueuePermissions.Add | SharedAccessQueuePermissions.Read, SharedAccessExpiryTime = DateTime.UtcNow.AddMinutes(15) },
+                       null
+                       );
 	````
 
 1. Locate the **GetCloudQueue** method and replace the code with the following snippet.
+	
+	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex4-GetCloudQueueMethod_)
 
+	<!-- mark:3-6 -->
 	````C#
 	private CloudQueue GetCloudQueue()
 	{
-		var queueClient = new CloudQueueClient(this.UriQueue, new StorageCredentials(Session["QueueSas"].ToString()));
+		var queueClient = new CloudQueueClient(this.UriQueue, new StorageCredentials(this.QueueSas));
 		var queue = queueClient.GetQueueReference("messagequeue");
 		queue.CreateIfNotExists();
 		return queue;
@@ -1699,7 +1646,7 @@ In this task you will uses SAS at queue level to restrict access to the storage 
 	
 	This code creates an instance of the **CloudQueueClient** class for the specified queue, using the created SAS, and then returns that instance.
 
-1.Press **F5** to run the solution.
+1. Press **F5** to run the solution.
 
 <a name="Exercise5" />
 ### Exercise 5: Updating SAS to use Stored Access Policies ###
@@ -1720,7 +1667,7 @@ In this task you will update table security to use stored access signature.
 
 1. Update **Global.asax.cs** to set the stored access policies for table storage.
 
-	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex5-AddStoredAccessPoliciesTables_)
+	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex5-TableStorageStoredAccessPoliciesTables_)
 
 	<!-- mark:7-12 -->
 	````C#
@@ -1731,14 +1678,13 @@ In this task you will update table security to use stored access signature.
 		table.CreateIfNotExists();
 
 		TablePermissions tp = new TablePermissions();
-		tp.SharedAccessPolicies.Add("readonly", new SharedAccessTablePolicy { Permissions = SharedAccessTablePermissions.Query, SharedAccessExpiryTime = DateTime.UtcNow.AddMinutes(15) });
-		tp.SharedAccessPolicies.Add("edit", new SharedAccessTablePolicy { Permissions = SharedAccessTablePermissions.Query | SharedAccessTablePermissions.Add | SharedAccessTablePermissions.Update, SharedAccessExpiryTime = DateTime.UtcNow.AddMinutes(15) });
-		tp.SharedAccessPolicies.Add("admin", new SharedAccessTablePolicy { Permissions = SharedAccessTablePermissions.Query | SharedAccessTablePermissions.Add | SharedAccessTablePermissions.Update | SharedAccessTablePermissions.Delete, SharedAccessExpiryTime = DateTime.UtcNow.AddMinutes(15) });
-		tp.SharedAccessPolicies.Add("none", new SharedAccessTablePolicy { Permissions = SharedAccessTablePermissions.None, SharedAccessExpiryTime = DateTime.UtcNow.AddMinutes(15) });
+		tp.SharedAccessPolicies.Add("readonly", new SharedAccessTablePolicy { Permissions = SharedAccessTablePermissions.Query, SharedAccessExpiryTime =  System.DateTime.UtcNow.AddMinutes(15) });
+		tp.SharedAccessPolicies.Add("edit", new SharedAccessTablePolicy { Permissions = SharedAccessTablePermissions.Query | SharedAccessTablePermissions.Add | SharedAccessTablePermissions.Update, SharedAccessExpiryTime =  System.DateTime.UtcNow.AddMinutes(15) });
+		tp.SharedAccessPolicies.Add("admin", new SharedAccessTablePolicy { Permissions = SharedAccessTablePermissions.Query | SharedAccessTablePermissions.Add | SharedAccessTablePermissions.Update | SharedAccessTablePermissions.Delete, SharedAccessExpiryTime =  System.DateTime.UtcNow.AddMinutes(15) });
+		tp.SharedAccessPolicies.Add("none", new SharedAccessTablePolicy { Permissions = SharedAccessTablePermissions.None, SharedAccessExpiryTime =  System.DateTime.UtcNow.AddMinutes(15) });
 		table.SetPermissions(tp);
   }
 	````
-	>**Note**: TODO: Explain what this is doing
 
 1. Open **PhotoDataServiceContext.cs** class and replace the _GetSas_ method with the following code.
 
@@ -1765,108 +1711,41 @@ In this task you will update table security to use stored access signature.
 	 }
 	````
 
-	>**Note**: TODO: Explain what this is doing
+1. Open **BaseController.cs** class and update the _OnActionExecuting_ method with the new _GetSas_ method implementation. To do so, replace the if structure code with the following.
 
-1. Open **HomeController.cs** class and update the _RefreshAccessCredentials_ method with the new _GetSas_ method implementation.
-
-	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex5-_)
+	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex5-GetTableSasOnActionExecuting_)
 	
-	<!-- mark:5-20 -->
+	<!-- mark:5-13 -->
 	````C#
-  public void RefreshAccessCredentials()
-  {
-		if ((Session["ExpireTime"] as DateTime? == null) || ((DateTime)Session["ExpireTime"] < DateTime.UtcNow))
+	protected override void OnActionExecuting(ActionExecutingContext filterContext)
+	{
+		...
+
+		if (this.User.Identity.IsAuthenticated)
 		{
-			 CloudTableClient cloudTableClientAdmin = this.StorageAccount.CreateCloudTableClient();
-			 var photoContextAdmin = new PhotoDataServiceContext(cloudTableClientAdmin);
-
-			 Session["Sas"] = photoContextAdmin.GetSas("Public", "edit");
-			 Session["QueueSas"] = this.StorageAccount.CreateCloudQueueClient().GetQueueReference("messagequeue").GetSharedAccessSignature(
-                        new SharedAccessQueuePolicy() { Permissions = SharedAccessQueuePermissions.Add | SharedAccessQueuePermissions.Read, SharedAccessExpiryTime = DateTime.UtcNow.AddMinutes(15) },
-                        null
-                        );
-
-			 if (this.User.Identity.IsAuthenticated)
-			 {
-				  Session["MySas"] = photoContextAdmin.GetSas(this.User.Identity.Name, "admin");
-				  Session["Sas"] = photoContextAdmin.GetSas("Public", "admin");
-			 }
-
-			 Session["ExpireTime"] = DateTime.UtcNow.AddMinutes(15);
+			this.AuthenticatedTableSas = photoContextAdmin.GetSas(this.User.Identity.Name, "admin");
+			this.PublicTableSas = photoContextAdmin.GetSas("Public", "admin");
 		}
-  }
-	````
-
-	>**Note**: TODO: Explain what this is doing
-
-1. Open **AccountController.cs** class and replace the _Login_ method with the new _GetSas_ method implementation.
-
-	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex5-_)
-	<!-- mark:10-11 -->
-	````C#
-  [HttpPost]
-  [AllowAnonymous]
-  [ValidateAntiForgeryToken]
-  public ActionResult Login(LoginModel model, string returnUrl)
-  {
-		if (ModelState.IsValid && WebSecurity.Login(model.UserName, model.Password, persistCookie: model.RememberMe))
-		{
-			 CloudTableClient cloudTableClientAdmin = this.StorageAccount.CreateCloudTableClient();
-			 var photoContextAdmin = new PhotoDataServiceContext(cloudTableClientAdmin);
-			 Session["MySas"] = photoContextAdmin.GetSas(model.UserName, "admin");
-			 Session["Sas"] = photoContextAdmin.GetSas("Public", "admin");
-			 Session["ExpireTime"] = DateTime.UtcNow.AddMinutes(15);
-			 return RedirectToLocal(returnUrl);
+		else
+			{
+			this.PublicTableSas = photoConte
 		}
-
-		// If we got this far, something failed, redisplay form
-		ModelState.AddModelError("", "The user name or password provided is incorrect.");
-		return View(model);
-  }
-	````
-
-1. Open **AccountController.cs** class and replace the _Register_ method with the new _GetSas_ method implementation.
-
-	(Code Snippet - _GettingStartedWindowsAzureStorage_ - Ex5-)
-
-	<!-- mark:15-16 -->
-	````C#
-  [HttpPost]
-  [AllowAnonymous]
-  [ValidateAntiForgeryToken]
-  public ActionResult Register(RegisterModel model)
-  {
-		if (ModelState.IsValid)
-		{
-			 // Attempt to register the user
-			 try
-			 {
-				  WebSecurity.CreateUserAndAccount(model.UserName, model.Password);
-				  WebSecurity.Login(model.UserName, model.Password);
-				  CloudTableClient cloudTableClientAdmin = this.StorageAccount.CreateCloudTableClient();
-				  var photoContextAdmin = new PhotoDataServiceContext(cloudTableClientAdmin);
-				  Session["MySas"] = photoContextAdmin.GetSas(model.UserName, "admin");
-				  Session["Sas"] = photoContextAdmin.GetSas("Public", "admin");
-				  Session["ExpireTime"] = DateTime.UtcNow.AddMinutes(15);
-				  return RedirectToAction("Index", "Home");
-			 }
-			 catch (MembershipCreateUserException e)
-			 {
-				  ModelState.AddModelError("", ErrorCodeToString(e.StatusCode));
-			 }
-		}
-
-		// If we got this far, something failed, redisplay form
-		return View(model);
-  }
+		...
+	}
 	````
 
 <a name="Ex5Task2" />
 #### Task 2 - Updating blob security to use stored access policy ####
 
-1. Update **Global.asax.cs** to set the stored access policies for blob storage.
+1. Open the **Global.asax.cs** class and add the following directive
 
-	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex5-_)
+	````C#
+	using Microsoft.WindowsAzure.Storage.Blob;
+	````
+
+1. Scroll down to the **Application_Start** method and set the stored access policies for blob storage. To do so, add the following code at the end of the method.
+
+	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex5-BlobStorageStoredAccessPolicy_)
 
 	<!-- mark:5-9 -->
 	````C#
@@ -1877,14 +1756,15 @@ In this task you will update table security to use stored access signature.
 		CloudBlobContainer blob = storageAccount.CreateCloudBlobClient().GetContainerReference(CloudConfigurationManager.GetSetting("ContainerName"));
 		BlobContainerPermissions bp = new BlobContainerPermissions();
 
-		bp.SharedAccessPolicies.Add("read", new SharedAccessBlobPolicy { Permissions = SharedAccessBlobPermissions.Read, SharedAccessExpiryTime = DateTime.UtcNow.AddMinutes(60) });
+		bp.SharedAccessPolicies.Add("read", new SharedAccessBlobPolicy { Permissions = SharedAccessBlobPermissions.Read, SharedAccessExpiryTime = System.DateTime.UtcNow.AddMinutes(60) });
 		blob.SetPermissions(bp);
  }
 	````
 
 1. Open **PhotoDataServiceContext.cs** class and replace the _GetSasForBlob_ method with the following implementation.
 
-	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex5_)
+	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex5-GetSasForBlobWithStoredAccessPolicy_)
+
 	<!-- mark:1-5 -->
 	````C#
 	public string GetSaSForBlob(CloudBlockBlob blob, string policyId)
@@ -1897,7 +1777,8 @@ In this task you will update table security to use stored access signature.
 
 1. Open **HomeController.cs** class and scroll down to the _Share_ method. Replace the _GetSasForBlob_ method call with the new implementation.
 
-	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex5-_)
+	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex5-ShareActionWithStoredAccessPolicy_)
+
 	<!-- mark:10 -->
 	````C#
 	[HttpGet]
@@ -1921,73 +1802,78 @@ In this task you will update table security to use stored access signature.
 	}
 	````
 
-1. Update the **HomeController** create method
+1. Update the **HomeController** create method to call the new GetSasForBlob implementation. You will also add some properties and metadata to the blob file in order to check them in the worker role later.
+	
+	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex5-CreateActionWithPropertiesAndMetadata_)
 
+	<!-- mark:4-50 -->
 	````C#
 	[HttpPost]
-			  public ActionResult Create(PhotoViewModel photoViewModel, HttpPostedFileBase file, bool Public, FormCollection collection)
-			  {
-					this.RefreshAccessCredentials();
+	public ActionResult Create(PhotoViewModel photoViewModel, HttpPostedFileBase file, bool Public, FormCollection collection)
+	{
+		if (this.ModelState.IsValid)
+		{
+			photoViewModel.PartitionKey = Public ? "Public" : this.User.Identity.Name;
+			var photo = this.FromViewModel(photoViewModel);
 
-					if (this.ModelState.IsValid)
-					{
-						 photoViewModel.PartitionKey = Public ? "Public" : this.User.Identity.Name;
-						 var photo = this.FromViewModel(photoViewModel);
+			if (file != null)
+			{
+				//Save file stream to Blob Storage
+				var blob = this.GetBlobContainer().GetBlockBlobReference(file.FileName);
+				blob.Properties.ContentType = file.ContentType;
+				var image = new System.Drawing.Bitmap(file.InputStream);
+				if (image != null)
+				{
+					blob.Metadata.Add("Width", image.Width.ToString());
+					blob.Metadata.Add("Height", image.Height.ToString());
+				}
 
-						 if (file != null)
-						 {
-							  //Save file stream to Blob Storage
-							  var blob = this.GetBlobContainer().GetBlockBlobReference(file.FileName);
-							  blob.Properties.ContentType = file.ContentType;
-							  var image = new System.Drawing.Bitmap(file.InputStream);
-							  if (image != null)
-							  {
-									blob.Metadata.Add("Width", image.Width.ToString());
-									blob.Metadata.Add("Height", image.Height.ToString());
-							  }
+				blob.UploadFromStream(file.InputStream);
+				photo.BlobReference = file.FileName;
+			}
+			else
+			{
+				this.ModelState.AddModelError("File", new ArgumentNullException("file"));
+				return this.View(photoViewModel);
+			}
 
-							  blob.SetMetadata();
-							  blob.SetProperties();
+			//Save information to Table Storage
+			var token = Public ? this.PublicTableSas : this.AuthenticatedTableSas;
+			if (!this.User.Identity.IsAuthenticated)
+			{
+				token = this.PublicTableSas;
+				photo.PartitionKey = "Public";
+			}
 
-							  blob.UploadFromStream(file.InputStream);
-							  photo.BlobReference = file.FileName;
-						 }
-						 else
-						 {
-							  this.ModelState.AddModelError("File", new ArgumentNullException("file"));
-							  return this.View(photoViewModel);
-						 }
+			CloudTableClient cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(token));
+			var photoContext = new PhotoDataServiceContext(cloudTableClient);
 
-						 //Save information to Table Storage
-						 var sasKey = Public ? "Sas" : "MySas";
-						 if (!this.User.Identity.IsAuthenticated)
-						 {
-							  sasKey = "Sas";
-							  photo.PartitionKey = "Public";
-						 }
+			photoContext.AddPhoto(photo);
 
-						 CloudTableClient cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(Session[sasKey].ToString()));
-						 var photoContext = new PhotoDataServiceContext(cloudTableClient);
+			//Send create notification
+			var msg = new CloudQueueMessage(string.Format("Photo Uploaded,{0}", photo.BlobReference));
+			this.GetCloudQueue().AddMessage(msg);
 
-						 photoContext.AddPhoto(photo);
+			return this.RedirectToAction("Index");
+		}
 
-						 //Send create notification
-						 var msg = new CloudQueueMessage(string.Format("Photo Uploaded,{0}", photo.BlobReference));
-						 this.GetCloudQueue().AddMessage(msg);
-
-						 return this.RedirectToAction("Index");
-					}
-
-					return this.View();
-			  }
+		return this.View();
+	}
 	````
 
 <a name="Ex5Task3" />
 #### Task 3 - Updating queue security to use stored access policy ####
 
-1. Update **Global.asax.cs** to set the stored access policies for queues storage.
+1. Open the **Global.asax.cs** file and add the following directives 
 
-	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex5_)
+	````C#
+	using Microsoft.WindowsAzure.Storage.Queue;
+	using Microsoft.WindowsAzure.Storage.Queue.Protocol;
+	````
+
+1. Update the **Application_Start** method to set the stored access policies for queues storage. You will also add a new metadata called resize and set it to true.
+
+	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex5-QueueStorageWithStoredAccessPolicy_)
 
 	<!-- mark:5-13 -->
 	````C#
@@ -1998,43 +1884,38 @@ In this task you will update table security to use stored access signature.
 		CloudQueue queue = storageAccount.CreateCloudQueueClient().GetQueueReference("messagequeue");
 		queue.CreateIfNotExists();
 		QueuePermissions qp = new QueuePermissions();
-		qp.SharedAccessPolicies.Add("add", new SharedAccessQueuePolicy { Permissions = SharedAccessQueuePermissions.Add | SharedAccessQueuePermissions.Read, SharedAccessExpiryTime = DateTime.UtcNow.AddMinutes(15)});
-		qp.SharedAccessPolicies.Add("process", new SharedAccessQueuePolicy { Permissions = SharedAccessQueuePermissions.ProcessMessages | SharedAccessQueuePermissions.Read, SharedAccessExpiryTime = DateTime.UtcNow.AddMinutes(15) });
+		qp.SharedAccessPolicies.Add("add", new SharedAccessQueuePolicy { Permissions = SharedAccessQueuePermissions.Add | SharedAccessQueuePermissions.Read, SharedAccessExpiryTime = System.DateTime.UtcNow.AddMinutes(15)});
+		qp.SharedAccessPolicies.Add("process", new SharedAccessQueuePolicy { Permissions = SharedAccessQueuePermissions.ProcessMessages | SharedAccessQueuePermissions.Read, SharedAccessExpiryTime = System.DateTime.UtcNow.AddMinutes(15) });
 		queue.SetPermissions(qp);
 
-		queue.Metadata.Add("Resize", "28");
+		queue.Metadata.Add("Resize", "true");
 		queue.SetMetadata();
 
 	}
 	````
-1. Open **HomeController.cs** class and scroll down to the _RefreshAccessCredentials_ method. Replace the _GetSharedAccessSingature_ method for queues with the following code.
+1. Open **BaseController.cs** class and locate the _OnActionExecuting_ method. Replace the _GetSharedAccessSingature_ method for queues with the following code.
 
-	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex5_)
+	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex5-GetSharedAccessSignatureWithStoredAccessPolicy_)
 
-	<!-- mark:8-11 -->
+	<!-- mark:5-7 -->
 	````C#
-	public void RefreshAccessCredentials()
+	protected override void OnActionExecuting(ActionExecutingContext filterContext)
 	{
-		if ((Session["ExpireTime"] as DateTime? == null) || ((DateTime)Session["ExpireTime"] < DateTime.UtcNow))
-		{
-			...
+		...
 
-			Session["Sas"] = photoContextAdmin.GetSas("Public", "edit");
-			Session["QueueSas"] = this.StorageAccount.CreateCloudQueueClient().GetQueueReference("messagequeue").GetSharedAccessSignature(
-					new SharedAccessQueuePolicy(),
-					"add"
-					);
-			...
-		}
+		this.QueueSas = this.StorageAccount.CreateCloudQueueClient().GetQueueReference("messagequeue").GetSharedAccessSignature(
+									new SharedAccessQueuePolicy() { },
+									"add");
 	}
 	````
 
-1. On the WorkerRole project, open the **WorkerRole.cs** class
+1. On the **QueueProcessor_WorkerRole** project, open the **WorkerRole.cs** class
 
 1. Add the following directives.
 
 	````C#
 	using Microsoft.WindowsAzure.Storage.Blob;
+	using Microsoft.WindowsAzure.Storage.Queue.Protocol;
 	````
 
 1. Add the following property to the **WorkerRole** class to store the _CloudBlobContainer_
@@ -2043,15 +1924,51 @@ In this task you will update table security to use stored access signature.
 	private CloudBlobContainer container;
 	````
 
-1. Scroll down to the _RefreshQueueClient_ method. Replace the GetSharedAccessPolicy  method with the following code.
+1. Create a new method called **CreateCloudBlobClient** in order to create the set the container property. To do so, insert the following code.
+	
+	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex5-CreateCloudBlobClientImplementation_)
 
-	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex5-_)
+	<!-- mark:1-7 -->
+	````C#
+	private void CreateCloudBlobClient()
+	{
+		var storageAccount = CloudStorageAccount.Parse(CloudConfigurationManager.GetSetting("StorageConnectionString"));
 
-	<!-- mark:3-5 -->
+		CloudBlobClient blobStorage = storageAccount.CreateCloudBlobClient();
+		this.container = blobStorage.GetContainerReference(CloudConfigurationManager.GetSetting("ContainerName"));
+	}
+	````
+
+1. Locate the **OnStart** method and call the **CreateCloudBlobClient** method you reciently created.
+	
+	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex5-CreateCloudBlobClientCall_)
+
+	<!-- mark:5 -->
+	````C#
+	public override bool OnStart()
+	{
+		...
+
+		this.CreateCloudBlobClient();
+
+		return base.OnStart();
+	}
+	````
+
+1. Scroll down to the _GetQueueSas_ method. Replace the GetSharedAccessPolicy  method with the following code.
+
+	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex5-QueueSharedAccessSignatureWithStoredAccessPolicyInWorkerRole_)
+
+	<!-- mark:5-10 -->
 	````C#
 	private CloudQueueClient RefreshQueueClient()
 	{
-		var token = client.GetSharedAccessSignature(
+		...
+
+		QueuePermissions qp = new QueuePermissions();
+		qp.SharedAccessPolicies.Add("process", new SharedAccessQueuePolicy { Permissions = SharedAccessQueuePermissions.ProcessMessages | SharedAccessQueuePermissions.Read, SharedAccessExpiryTime = DateTime.UtcNow.AddMinutes(15) });
+		queue.SetPermissions(qp);
+		var token = queue.GetSharedAccessSignature(
 					 new SharedAccessQueuePolicy(),
 						"process");
 
@@ -2060,27 +1977,9 @@ In this task you will update table security to use stored access signature.
 	}
 	````
 
-1. Update the _SetPermissions_ method with the following code
+1. Add the following code to the _Run_ method in the **WorkerRole** class in order to display the properties and metadata saved in the WebRole. Place them inside the if block, at the begining.
 
-	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex5-_)
-	<!-- mark:5-8 -->
-	````C#
-	private void SetPermissions()
-	{
-		...
-
-		QueuePermissions qp = new QueuePermissions();
-		qp.SharedAccessPolicies.Add("add", new SharedAccessQueuePolicy { Permissions = SharedAccessQueuePermissions.Add | SharedAccessQueuePermissions.Read, SharedAccessExpiryTime = DateTime.UtcNow.AddMinutes(15) });
-		qp.SharedAccessPolicies.Add("process", new SharedAccessQueuePolicy { Permissions = SharedAccessQueuePermissions.ProcessMessages | SharedAccessQueuePermissions.Read, SharedAccessExpiryTime = DateTime.UtcNow.AddMinutes(15) });
-		queue.SetPermissions(qp);
-
-		client = queue;
-	}
-	````
-
-1. Update the _Run_ method in the **WorkerRole** class in order to display the properties and metadata saved in the WebRole.
-
-	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex5_)
+	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex5-RunMethodUpdate_)
 
 	<!-- mark:11-30 -->
 	````C#
@@ -2100,7 +1999,7 @@ In this task you will update table security to use stored access signature.
 					  var message = messageParts[0];
 					  var blobReference = messageParts[1];
 
-					  if (queue.Metadata.ContainsKey("Resize"))
+					  if (queue.Metadata.ContainsKey("Resize") && string.Equals(message, "Photo Uploaded"))
 					  {
 							var maxSize = queue.Metadata["Resize"];
 
@@ -2123,7 +2022,7 @@ In this task you will update table security to use stored access signature.
 		}
 	````
 
-1. Go the the cloud project and right click in **PhotoUploader_WorkerRole** role under **Roles** folder and select **Properties**.
+1. Go the the Cloud project and right click in **QueueProcessor_WorkerRole** role under **Roles** folder and select **Properties**.
 
 	![WorkerRole Properties](Images/workerrole-properties.png?raw=true "WorkerRole Properties")
 
@@ -2143,7 +2042,6 @@ In this task you will update table security to use stored access signature.
 1. Press **F5** to start with debugging the solution.
 
 	>**Note**: The Windows Azure Emulator should start
-
 
 1. Login to the application with the user you created in Exercise 3.
 

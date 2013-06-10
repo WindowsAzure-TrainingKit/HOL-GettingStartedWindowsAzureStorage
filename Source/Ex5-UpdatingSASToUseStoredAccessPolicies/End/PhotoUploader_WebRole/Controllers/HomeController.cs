@@ -15,20 +15,14 @@ using System.Web.Mvc;
 
 namespace PhotoUploader_WebRole.Controllers
 {
-    public class HomeController : Controller
+    public class HomeController : BaseController
     {
-        private CloudStorageAccount StorageAccount = CloudStorageAccount.Parse(CloudConfigurationManager.GetSetting("StorageConnectionString"));
-        private Uri UriTable = new Uri("http://127.0.0.1:10002/devstoreaccount1");
-        private Uri UriQueue = new Uri("http://127.0.0.1:10001/devstoreaccount1");
-
         //
         // GET: /
 
         public ActionResult Index()
         {
-            this.RefreshAccessCredentials();
-
-            CloudTableClient cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(Session["Sas"].ToString()));
+            CloudTableClient cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(this.PublicTableSas));
             var photoContext = new PhotoDataServiceContext(cloudTableClient);
             var photoList = new List<PhotoViewModel>();
 
@@ -42,7 +36,7 @@ namespace PhotoUploader_WebRole.Controllers
 
             if (this.User.Identity.IsAuthenticated)
             {
-                cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(Session["MySas"].ToString()));
+                cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(this.AuthenticatedTableSas));
                 photoContext = new PhotoDataServiceContext(cloudTableClient);
 
                 photos = photoContext.GetPhotos(this.User.Identity.Name);
@@ -60,14 +54,12 @@ namespace PhotoUploader_WebRole.Controllers
 
         public ActionResult Details(string partitionKey, string rowKey)
         {
-            this.RefreshAccessCredentials();
-
             CloudTableClient cloudTableClient;
             PhotoEntity photo;
 
             if (partitionKey == "Public")
             {
-                cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(Session["Sas"].ToString()));
+                cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(this.PublicTableSas));
                 var photoContext = new PhotoDataServiceContext(cloudTableClient);
                 photo = photoContext.GetById(partitionKey, rowKey);
                 if (photo == null)
@@ -77,7 +69,7 @@ namespace PhotoUploader_WebRole.Controllers
             }
             else
             {
-                cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(Session["MySas"].ToString()));
+                cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(this.AuthenticatedTableSas));
                 var photoContext = new PhotoDataServiceContext(cloudTableClient);
 
                 photo = photoContext.GetById(this.User.Identity.Name, rowKey);
@@ -101,8 +93,6 @@ namespace PhotoUploader_WebRole.Controllers
 
         public ActionResult Create()
         {
-            this.RefreshAccessCredentials();
-
             return View();
         }
 
@@ -112,8 +102,6 @@ namespace PhotoUploader_WebRole.Controllers
         [HttpPost]
         public ActionResult Create(PhotoViewModel photoViewModel, HttpPostedFileBase file, bool Public, FormCollection collection)
         {
-            this.RefreshAccessCredentials();
-
             if (this.ModelState.IsValid)
             {
                 photoViewModel.PartitionKey = Public ? "Public" : this.User.Identity.Name;
@@ -141,28 +129,21 @@ namespace PhotoUploader_WebRole.Controllers
                 }
 
                 //Save information to Table Storage
-                var sasKey = Public ? "Sas" : "MySas";
+                var token = Public ? this.PublicTableSas : this.AuthenticatedTableSas;
                 if (!this.User.Identity.IsAuthenticated)
                 {
-                    sasKey = "Sas";
+                    token = this.PublicTableSas;
                     photo.PartitionKey = "Public";
                 }
 
-                CloudTableClient cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(Session[sasKey].ToString()));
+                CloudTableClient cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(token));
                 var photoContext = new PhotoDataServiceContext(cloudTableClient);
 
                 photoContext.AddPhoto(photo);
 
                 //Send create notification
-                try
-                {
-                    var msg = new CloudQueueMessage(string.Format("Photo Uploaded,{0}", photo.BlobReference));
-                    this.GetCloudQueue().AddMessage(msg);
-                }
-                catch (Exception e)
-                {
-                    System.Diagnostics.Trace.TraceError("Invalid SAS for Queues", "Error");
-                }
+                var msg = new CloudQueueMessage(string.Format("Photo Uploaded,{0}", photo.BlobReference));
+                this.GetCloudQueue().AddMessage(msg);
 
                 return this.RedirectToAction("Index");
             }
@@ -175,9 +156,7 @@ namespace PhotoUploader_WebRole.Controllers
 
         public ActionResult Edit(string partitionKey, string rowKey)
         {
-            this.RefreshAccessCredentials();
-
-            string token = partitionKey == "Public" ? Session["Sas"].ToString() : Session["MySas"].ToString();
+            string token = partitionKey == "Public" ? this.PublicTableSas : this.AuthenticatedTableSas;
 
             CloudTableClient cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(token));
             var photoContext = new PhotoDataServiceContext(cloudTableClient);
@@ -204,13 +183,11 @@ namespace PhotoUploader_WebRole.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult Edit(PhotoViewModel photoViewModel, FormCollection collection)
         {
-            this.RefreshAccessCredentials();
-
             if (ModelState.IsValid)
             {
                 var photo = this.FromViewModel(photoViewModel);
 
-                var token = photoViewModel.PartitionKey == "Public" ? Session["Sas"].ToString() : Session["MySas"].ToString();
+                var token = photoViewModel.PartitionKey == "Public" ? this.PublicTableSas : this.AuthenticatedTableSas;
 
                 CloudTableClient cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(token));
                 var photoContext = new PhotoDataServiceContext(cloudTableClient);
@@ -226,9 +203,7 @@ namespace PhotoUploader_WebRole.Controllers
         // GET: /Home/Delete/5
         public ActionResult Delete(string partitionKey, string rowKey)
         {
-            this.RefreshAccessCredentials();
-
-            string token = partitionKey == "Public" ? Session["Sas"].ToString() : Session["MySas"].ToString();
+            string token = partitionKey == "Public" ? this.PublicTableSas : this.AuthenticatedTableSas;
 
             CloudTableClient cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(token));
             var photoContext = new PhotoDataServiceContext(cloudTableClient);
@@ -255,11 +230,9 @@ namespace PhotoUploader_WebRole.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult DeleteConfirmed(string partitionKey, string rowKey)
         {
-            this.RefreshAccessCredentials();
-
             if (ModelState.IsValid)
             {
-                string token = partitionKey == "Public" ? Session["Sas"].ToString() : Session["MySas"].ToString();
+                string token = partitionKey == "Public" ? this.PublicTableSas : this.AuthenticatedTableSas;
 
                 CloudTableClient cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(token));
                 var photoContext = new PhotoDataServiceContext(cloudTableClient);
@@ -291,7 +264,7 @@ namespace PhotoUploader_WebRole.Controllers
         [HttpGet]
         public ActionResult ToPrivate(string partitionKey, string rowKey)
         {
-            CloudTableClient cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(Session["Sas"].ToString()));
+            CloudTableClient cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(this.PublicTableSas));
             var photoContext = new PhotoDataServiceContext(cloudTableClient);
             var photo = photoContext.GetById(partitionKey, rowKey);
             if (photo == null)
@@ -301,7 +274,7 @@ namespace PhotoUploader_WebRole.Controllers
 
             photoContext.DeletePhoto(photo);
 
-            cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(Session["MySas"].ToString()));
+            cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(this.AuthenticatedTableSas));
             photoContext = new PhotoDataServiceContext(cloudTableClient);
             photo.PartitionKey = this.User.Identity.Name;
             photoContext.AddPhoto(photo);
@@ -312,7 +285,7 @@ namespace PhotoUploader_WebRole.Controllers
         [HttpGet]
         public ActionResult ToPublic(string partitionKey, string rowKey)
         {
-            CloudTableClient cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(Session["MySas"].ToString()));
+            CloudTableClient cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(this.AuthenticatedTableSas));
             var photoContext = new PhotoDataServiceContext(cloudTableClient);
             var photo = photoContext.GetById(partitionKey, rowKey);
             if (photo == null)
@@ -322,7 +295,7 @@ namespace PhotoUploader_WebRole.Controllers
 
             photoContext.DeletePhoto(photo);
 
-            cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(Session["Sas"].ToString()));
+            cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(this.PublicTableSas));
             photoContext = new PhotoDataServiceContext(cloudTableClient);
             photo.PartitionKey = "Public";
             photoContext.AddPhoto(photo);
@@ -333,14 +306,10 @@ namespace PhotoUploader_WebRole.Controllers
         [HttpGet]
         public ActionResult Share(string partitionKey, string rowKey)
         {
-            this.RefreshAccessCredentials();
-
-            PhotoEntity photo;
-
-            var cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(Session["MySas"].ToString()));
+            var cloudTableClient = new CloudTableClient(this.UriTable, new StorageCredentials(this.AuthenticatedTableSas));
             var photoContext = new PhotoDataServiceContext(cloudTableClient);
 
-            photo = photoContext.GetById(partitionKey, rowKey);
+            PhotoEntity photo = photoContext.GetById(partitionKey, rowKey);
             if (photo == null)
             {
                 return this.HttpNotFound();
@@ -396,32 +365,9 @@ namespace PhotoUploader_WebRole.Controllers
 
         private CloudQueue GetCloudQueue()
         {
-            var queueClient = new CloudQueueClient(this.UriQueue, new StorageCredentials(Session["QueueSas"].ToString()));
+            var queueClient = new CloudQueueClient(this.UriQueue, new StorageCredentials(this.QueueSas));
             var queue = queueClient.GetQueueReference("messagequeue");
             return queue;
-        }
-
-        public void RefreshAccessCredentials()
-        {
-            if ((Session["ExpireTime"] as DateTime? == null) || ((DateTime)Session["ExpireTime"] < DateTime.UtcNow))
-            {
-                CloudTableClient cloudTableClientAdmin = this.StorageAccount.CreateCloudTableClient();
-                var photoContextAdmin = new PhotoDataServiceContext(cloudTableClientAdmin);
-
-                Session["Sas"] = photoContextAdmin.GetSas("Public", "edit");
-
-                if (this.User.Identity.IsAuthenticated)
-                {
-                    Session["MySas"] = photoContextAdmin.GetSas(this.User.Identity.Name, "admin");
-                    Session["Sas"] = photoContextAdmin.GetSas("Public", "admin");
-                    Session["QueueSas"] = this.StorageAccount.CreateCloudQueueClient().GetQueueReference("messagequeue").GetSharedAccessSignature(
-                        new SharedAccessQueuePolicy(),
-                        "add"
-                        );
-                }
-
-                Session["ExpireTime"] = DateTime.UtcNow.AddMinutes(15);
-            }
         }
     }
 }

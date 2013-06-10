@@ -13,6 +13,7 @@
 {
     <table>
         <tr>
+            <th> Owner</th>
             <th> @Html.DisplayNameFor(model => model.Title)</th>
             <th> @Html.DisplayNameFor(model => model.Description)</th>
             <th></th>
@@ -20,11 +21,15 @@
         @foreach (var photo in this.Model)
         {
             <tr>
+                <td>@photo.PartitionKey</td>
                 <td>@photo.Title</td>
                 <td>@photo.Description</td>
-                <td>@Html.ActionLink("Edit", "Edit", new { id = photo.RowKey })</td>
-                <td>@Html.ActionLink("Details", "Details", new { id = photo.RowKey })</td>
-                <td>@Html.ActionLink("Delete", "Delete", new { id = photo.RowKey })</td>
+                <td>@Html.ActionLink("Edit", "Edit", new { partitionKey = photo.PartitionKey, rowKey = photo.RowKey })</td>
+                <td>@Html.ActionLink("Details", "Details", new { partitionKey = photo.PartitionKey, rowKey = photo.RowKey })</td>
+                <td>@Html.ActionLink("Delete", "Delete", new { partitionKey = photo.PartitionKey, rowKey = photo.RowKey })</td>
+                
+                
+                
             </tr>
         }
     </table>

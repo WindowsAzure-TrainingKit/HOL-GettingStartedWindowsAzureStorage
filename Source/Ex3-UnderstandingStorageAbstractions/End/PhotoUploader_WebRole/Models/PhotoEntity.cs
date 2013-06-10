@@ -10,13 +10,7 @@ namespace PhotoUploader_WebRole.Models
     {
         public PhotoEntity() 
         {
-            PartitionKey = "Public";
-            RowKey = Guid.NewGuid().ToString();
-        }
-
-        public PhotoEntity(string partitionKey)
-        {
-            PartitionKey = partitionKey;
+            PartitionKey = "Photo";
             RowKey = Guid.NewGuid().ToString();
         }
 

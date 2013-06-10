@@ -4,10 +4,6 @@ using System.Web.Security;
 using WebMatrix.WebData;
 using PhotoUploader_WebRole.Filters;
 using PhotoUploader_WebRole.Models;
-using Microsoft.WindowsAzure.Storage.Table;
-using Microsoft.WindowsAzure.Storage;
-using Microsoft.WindowsAzure;
-using Microsoft.WindowsAzure.Storage.Queue;
 
 namespace PhotoUploader_WebRole.Controllers
 {
@@ -15,7 +11,6 @@ namespace PhotoUploader_WebRole.Controllers
     [InitializeSimpleMembership]
     public class AccountController : Controller
     {
-        private CloudStorageAccount StorageAccount = CloudStorageAccount.Parse(CloudConfigurationManager.GetSetting("StorageConnectionString"));
         //
         // GET: /Account/Login
 
@@ -36,11 +31,6 @@ namespace PhotoUploader_WebRole.Controllers
         {
             if (ModelState.IsValid && WebSecurity.Login(model.UserName, model.Password, persistCookie: model.RememberMe))
             {
-                CloudTableClient cloudTableClientAdmin = this.StorageAccount.CreateCloudTableClient();
-                var photoContextAdmin = new PhotoDataServiceContext(cloudTableClientAdmin);
-                Session["MySas"] = photoContextAdmin.GetSas(model.UserName, SharedAccessTablePermissions.Add | SharedAccessTablePermissions.Delete | SharedAccessTablePermissions.Query | SharedAccessTablePermissions.Update);
-                Session["Sas"] = photoContextAdmin.GetSas("Public", SharedAccessTablePermissions.Add | SharedAccessTablePermissions.Delete | SharedAccessTablePermissions.Query | SharedAccessTablePermissions.Update);
-                Session["ExpireTime"] = DateTime.UtcNow.AddMinutes(15);
                 return RedirectToLocal(returnUrl);
             }
 
@@ -57,9 +47,6 @@ namespace PhotoUploader_WebRole.Controllers
         public ActionResult LogOff()
         {
             WebSecurity.Logout();
-
-            Session["ExpireTime"] = null;
-            Session["MySas"] = null;
 
             return RedirectToAction("Index", "Home");
         }
@@ -88,11 +75,6 @@ namespace PhotoUploader_WebRole.Controllers
                 {
                     WebSecurity.CreateUserAndAccount(model.UserName, model.Password);
                     WebSecurity.Login(model.UserName, model.Password);
-                    CloudTableClient cloudTableClientAdmin = this.StorageAccount.CreateCloudTableClient();
-                    var photoContextAdmin = new PhotoDataServiceContext(cloudTableClientAdmin);
-                    Session["MySas"] = photoContextAdmin.GetSas(model.UserName, SharedAccessTablePermissions.Add | SharedAccessTablePermissions.Delete | SharedAccessTablePermissions.Query | SharedAccessTablePermissions.Update);
-                    Session["Sas"] = photoContextAdmin.GetSas("Public", SharedAccessTablePermissions.Add | SharedAccessTablePermissions.Delete | SharedAccessTablePermissions.Query | SharedAccessTablePermissions.Update);
-                    Session["ExpireTime"] = DateTime.UtcNow.AddMinutes(15);
                     return RedirectToAction("Index", "Home");
                 }
                 catch (MembershipCreateUserException e)
