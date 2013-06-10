@@ -1043,6 +1043,8 @@ Shared Access Signatures allow granular access to tables, queues, blob container
 
 In this exercise you will learn how to use Shared Access Signatures with the three storage abstractions: Tables, Blobs, and Queues.
 
+>**Note:** This sample application does not follow all best practices for using Shared Access Signature for simplicity's sake. In a production environment you will typically have a service that generates the SAS for your application.
+
 <a name="Ex4Task1" />
 #### Task 1 - Adding SAS at table level  ####
 
@@ -1521,7 +1523,7 @@ In this task you will learn how to create SAS for Azure Blobs. SAS can be create
 
 1. Click the **Share** link, next to one of the uploaded photos. You will navigate to the _Share_ page.
 
-	![Generating a link to share a blob](Images/sharing-a-blob.png?raw=true "Generating a link to share a blob")
+	![Generating a link to share a blob](Images/sharing-a-blob-page.png?raw=true "Generating a link to share a blob")
 
 	_Generating a link to share a blob_
 
