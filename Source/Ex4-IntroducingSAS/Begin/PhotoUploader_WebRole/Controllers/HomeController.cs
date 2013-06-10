@@ -35,13 +35,13 @@ namespace PhotoUploader_WebRole.Controllers
         {
             CloudTableClient cloudTableClient = this.StorageAccount.CreateCloudTableClient();
             var photoContext = new PhotoDataServiceContext(cloudTableClient);
-            PhotoEntity photo = photoContext.GetById(partitionKey,rowKey);
+            PhotoEntity photo = photoContext.GetById(partitionKey, rowKey);
 
             if (photo == null)
             {
                 return HttpNotFound();
             }
-            
+
             var viewModel = this.ToViewModel(photo);
             if (!string.IsNullOrEmpty(photo.BlobReference))
             {
@@ -67,7 +67,7 @@ namespace PhotoUploader_WebRole.Controllers
         {
             if (this.ModelState.IsValid)
             {
-				photoViewModel.PartitionKey = this.User.Identity.IsAuthenticated ? this.User.Identity.Name : "Public";
+                photoViewModel.PartitionKey = this.User.Identity.IsAuthenticated ? this.User.Identity.Name : "Public";
                 var photo = this.FromViewModel(photoViewModel);
 
                 if (file != null)
@@ -80,7 +80,7 @@ namespace PhotoUploader_WebRole.Controllers
                 }
                 else
                 {
-                    this.ModelState.AddModelError("File",new ArgumentNullException("file"));
+                    this.ModelState.AddModelError("File", new ArgumentNullException("file"));
                     return this.View(photoViewModel);
                 }
 
@@ -89,9 +89,16 @@ namespace PhotoUploader_WebRole.Controllers
                 var photoContext = new PhotoDataServiceContext(cloudTableClient);
                 photoContext.AddPhoto(photo);
 
-                //Send create notification
-                var msg = new CloudQueueMessage("Photo Uploaded");
-                this.GetCloudQueue().AddMessage(msg);
+                try
+                {
+                    //Send create notification
+                    var msg = new CloudQueueMessage("Photo Uploaded");
+                    this.GetCloudQueue().AddMessage(msg);
+                }
+                catch (Exception e)
+                {
+                    System.Diagnostics.Trace.TraceInformation("Error", "Couldn't send notification");
+                }
 
                 return this.RedirectToAction("Index");
             }
@@ -186,9 +193,16 @@ namespace PhotoUploader_WebRole.Controllers
                 blob.DeleteIfExists();
             }
 
-            //Send delete notification
-            var msg = new CloudQueueMessage("Photo Deleted");
-            this.GetCloudQueue().AddMessage(msg);
+            try
+            {
+                //Send delete notification
+                var msg = new CloudQueueMessage("Photo Deleted");
+                this.GetCloudQueue().AddMessage(msg);
+            }
+            catch (Exception e)
+            {
+                System.Diagnostics.Trace.TraceInformation("Error", "Couldn't send notification");
+            }
 
             return this.RedirectToAction("Index");
         }

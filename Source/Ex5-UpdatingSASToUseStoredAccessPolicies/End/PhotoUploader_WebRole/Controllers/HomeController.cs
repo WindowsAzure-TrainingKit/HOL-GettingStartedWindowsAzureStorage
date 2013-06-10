@@ -141,9 +141,16 @@ namespace PhotoUploader_WebRole.Controllers
 
                 photoContext.AddPhoto(photo);
 
-                //Send create notification
-                var msg = new CloudQueueMessage(string.Format("Photo Uploaded,{0}", photo.BlobReference));
-                this.GetCloudQueue().AddMessage(msg);
+                try
+                {
+                    //Send create notification
+                    var msg = new CloudQueueMessage(string.Format("Photo Uploaded,{0}", photo.BlobReference));
+                    this.GetCloudQueue().AddMessage(msg);
+                }
+                catch (Exception e)
+                {
+                    System.Diagnostics.Trace.TraceInformation("Error", "Couldn't send notification");
+                }
 
                 return this.RedirectToAction("Index");
             }
@@ -252,10 +259,16 @@ namespace PhotoUploader_WebRole.Controllers
                     blob.DeleteIfExists();
                 }
 
-                //Send delete notification
-
-                var msg = new CloudQueueMessage(string.Format("Photo Deleted,{0}", photo.BlobReference));
-                this.GetCloudQueue().AddMessage(msg);
+                try
+                {
+                    //Send delete notification
+                    var msg = new CloudQueueMessage(string.Format("Photo Deleted,{0}", photo.BlobReference));
+                    this.GetCloudQueue().AddMessage(msg);
+                }
+                catch (Exception e)
+                {
+                    System.Diagnostics.Trace.TraceInformation("Error", "Couldn't send notification");
+                }
 
             }
             return this.RedirectToAction("Index");

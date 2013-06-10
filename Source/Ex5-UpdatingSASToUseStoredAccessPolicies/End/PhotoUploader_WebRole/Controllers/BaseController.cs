@@ -37,11 +37,8 @@ namespace PhotoUploader_WebRole.Controllers
             else
             {
                 this.PublicTableSas = photoContextAdmin.GetSas("Public", "edit");
-                this.QueueSas = this.StorageAccount.CreateCloudQueueClient().GetQueueReference("messagequeue").GetSharedAccessSignature(
-                        new SharedAccessQueuePolicy() { },
-                        "add"
-                        );
                 this.AuthenticatedTableSas = null;
+                this.QueueSas = null;
             }
         }
     }

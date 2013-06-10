@@ -185,7 +185,7 @@ You can monitor your storage accounts in the Windows Azure Management Portal. Fo
 
 	_Changing Chart values to Absolute_
 
-1.	To change the time range the metrics chart displays, select **6 hours**, **24 hours**, or **7 days** at the top of the chart.
+1.	To change the time range the metrics chart displays, select **6 hours**, **24 hours**, or **1 days** at the top of the chart.
 
 	![dashboard-time-ranges](Images/dashboard-time-ranges.png?raw=true)
 
@@ -265,7 +265,7 @@ When you create a storage account, Windows Azure generates two 512-bit storage a
 <a name="Exercise3"></a>
 ###Exercise 3: Understanding the Windows Azure Storage Abstractions ###
 
-This sample application is comprised of 5 Views, one for each CRUD operation (Create, Read, Update, Delete) and one to list all the entities from the Table storage. In this exercise, you will update the MVC application actions to perform operations against each storage service (Table, Blob and Queue) using **Windows Azure SDK v2.0**.
+This sample application is comprised of five Views, one for each CRUD operation (Create, Read, Update, Delete) and one to list all the entities from the Table storage. In this exercise, you will update the MVC application actions to perform operations against each storage service (Table, Blob and Queue) using **Windows Azure SDK v2.0**.
 
 <a name="Ex3Task1" />
 #### Task 1 - Configuring Storage Account in the Cloud Project ####
@@ -274,7 +274,7 @@ In this task you will configure the _storage connection string_ of the applicati
 
 1. Open **Visual Studio Express 2012 for Web** as Administrator.
 
-1. Browse to the **Source\Ex3-UnderstandingStorageAbstractions\Begin\PhotoUploader** folder of this lab and open the **Begin.sln** solution. Make sure to set the **PhotoUploader** cloud project as the default project.
+1. Browse to the **Source\Ex3-UnderstandingStorageAbstractions\Begin\** folder of this lab and open the **Begin.sln** solution. Make sure to set the **PhotoUploader** cloud project as the default project.
 
 1. Go to the **PhotoUploader_WebRole** located in the **Roles** folder of the **PhotoUploader** solution. Right-click it and select **Properties**.
 
@@ -301,7 +301,7 @@ In this task you will configure the _storage connection string_ of the applicati
 <a name="Ex3Task2" />
 #### Task 2 - Working with Table Storage ####
 
-In this task you will update the MVC application actions to perform operations against the Table Storage. You are going to use Table Storage to save infromation from the photo uploaded such as Title and Description.
+In this task you will update the MVC application actions to perform operations against the Table Storage. You are going to use Table Storage to save information from the photo uploaded such as Title and Description.
 
 1. Open **PhotoEntity.cs** under **Models** folder and add the following directives.
 
@@ -312,7 +312,7 @@ In this task you will update the MVC application actions to perform operations a
 1. Update the class to inherit from **TableEntity**. The TableEntity has a **PartitionKey** and  **RowKey** property that need to be set when adding a new row to the Table Storage. To do so, add the following Constructor and inherit the class from **TableEntity**.
 
 	(Code Snippet - _GettingStartedWindowsAzureStorage - Ex3-InheritingTableEntity_)
-	<!-- mark:3-7 -->
+	<!-- mark:1-7 -->
 	````C#
 	public class PhotoEntity : TableEntity
 	{
@@ -385,7 +385,7 @@ In this task you will update the MVC application actions to perform operations a
 	}
 	````
 
-	>**Note**: The following code uses a **TableOperation** to retrieve the photo with the specific **RowKey**. This method returns just one entity, rather than a collection, and the returned value in **TableResult.Result** is a **PhotoEntity**.
+	>**Note**: The previous code uses a **TableOperation** to retrieve the photo with the specific **RowKey**. This method returns just one entity, rather than a collection, and the returned value in **TableResult.Result** is a **PhotoEntity**.
 
 1.	In order to add a new entity, you can use the **Insert** table operation. Add the following code to implement it:
 
@@ -498,7 +498,7 @@ In this task you will update the MVC application actions to perform operations a
 	}
 	````
 
-1. The **Home** page will diplay a list of entities from the table storage. To do so, replace the **Index** action to retrieve the entire list of entities from the table storage using the **PhotoDataServiceContext** with the following code.
+1. The **Home** page will display a list of entities from the table storage. To do so, replace the **Index** action to retrieve the entire list of entities from the table storage using the **PhotoDataServiceContext** with the following code.
 
 	(Code Snippet - _GettingStartedWindowsAzureStorage - Ex3-TableStorageIndex_)
 
@@ -880,7 +880,7 @@ In this task, you will use queues to simulate a notification service, where a me
 
 	(Code Snippet - _GettingStartedWindowsAzureStorage - Ex3-QueueSendMessageCreate_)
 
-	<!-- mark:9-11 -->
+	<!-- mark:9-18 -->
 	````C#
 	[HttpPost]
 	public ActionResult Create(PhotoViewModel photoViewModel, HttpPostedFileBase file, FormCollection collection)
@@ -891,9 +891,16 @@ In this task, you will use queues to simulate a notification service, where a me
 			photoContext.AddPhoto(photo);
 
 			//Send create notification
-			var msg = new CloudQueueMessage("Photo Uploaded");
-			this.GetCloudQueue().AddMessage(msg);
-
+			try
+			{
+			  var msg = new CloudQueueMessage("Photo Uploaded");
+			  this.GetCloudQueue().AddMessage(msg);
+			}
+			catch (Exception e)
+			{
+			  System.Diagnostics.Trace.TraceInformation("Error", "Couldn't send notification");
+			}
+			
 			return this.RedirectToAction("Index");
 		}
 
@@ -905,7 +912,7 @@ In this task, you will use queues to simulate a notification service, where a me
 
 	(Code Snippet - _GettingStartedWindowsAzureStorage - Ex3-QueueSendMessageDelete_)
 
-	<!-- mark:7-9 -->
+	<!-- mark:7-16 -->
 	````C#
 	[HttpPost, ActionName("Delete")]
 	[ValidateAntiForgeryToken]
@@ -913,9 +920,16 @@ In this task, you will use queues to simulate a notification service, where a me
 	{
 		...
 
-		//Send delete notification
-		var msg = new CloudQueueMessage("Photo Deleted");
-		this.GetCloudQueue().AddMessage(msg);
+		 try
+		 {
+			  //Send delete notification
+			  var msg = new CloudQueueMessage("Photo Deleted");
+			  this.GetCloudQueue().AddMessage(msg);
+		 }
+		 catch (Exception e)
+		 {
+			  System.Diagnostics.Trace.TraceInformation("Error", "Couldn't send notification");
+		 }
 
 		return this.RedirectToAction("Index");
 	}
@@ -1013,7 +1027,7 @@ In this task, you will use Visual Studio to inspect the Windows Azure Storage Ac
 
 	_Add New Storage Account_
 
-1. Expand the storage account you configured in the Server Explorer. Notice that there is an entry for Tables, Blobs and Queues.
+1. Expand the storage account you configured in the Database Explorer. Notice that there is an entry for Tables, Blobs and Queues.
 
 1. Expand the **Tables** container. You will see the **Photos** table inside it.
 
@@ -1743,7 +1757,7 @@ In this task you will update table security to use stored access signature.
 
 	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex5-GetSasImplementation_)
 
-	<!-- mark:5-17 -->
+	<!-- mark:5-16 -->
 	````C#
 	 public class PhotoDataServiceContext : TableServiceContext
 	 {
@@ -1768,7 +1782,7 @@ In this task you will update table security to use stored access signature.
 
 	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex5-GetTableSasOnActionExecuting_)
 	
-	<!-- mark:5-13 -->
+	<!-- mark:5-19 -->
 	````C#
 	protected override void OnActionExecuting(ActionExecutingContext filterContext)
 	{
@@ -1776,12 +1790,18 @@ In this task you will update table security to use stored access signature.
 
 		if (this.User.Identity.IsAuthenticated)
 		{
-			this.AuthenticatedTableSas = photoContextAdmin.GetSas(this.User.Identity.Name, "admin");
-			this.PublicTableSas = photoContextAdmin.GetSas("Public", "admin");
+			 this.AuthenticatedTableSas = photoContextAdmin.GetSas(this.User.Identity.Name, "admin");
+			 this.PublicTableSas = photoContextAdmin.GetSas("Public", "admin");
+			 this.QueueSas = this.StorageAccount.CreateCloudQueueClient().GetQueueReference("messagequeue").GetSharedAccessSignature(
+				 new SharedAccessQueuePolicy() { Permissions = SharedAccessQueuePermissions.Add | SharedAccessQueuePermissions.Read, SharedAccessExpiryTime = DateTime.UtcNow.AddMinutes(15) },
+				 null
+				 );
 		}
 		else
-			{
-			this.PublicTableSas = photoConte
+		{
+			 this.PublicTableSas = photoContextAdmin.GetSas("Public", "edit");
+			 this.AuthenticatedTableSas = null;
+			 this.QueueSas = null;
 		}
 		...
 	}
@@ -1859,7 +1879,7 @@ In this task you will update table security to use stored access signature.
 	
 	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex5-CreateActionWithPropertiesAndMetadata_)
 
-	<!-- mark:4-50 -->
+	<!-- mark:4-57 -->
 	````C#
 	[HttpPost]
 	public ActionResult Create(PhotoViewModel photoViewModel, HttpPostedFileBase file, bool Public, FormCollection collection)
@@ -1903,9 +1923,16 @@ In this task you will update table security to use stored access signature.
 
 			photoContext.AddPhoto(photo);
 
-			//Send create notification
-			var msg = new CloudQueueMessage(string.Format("Photo Uploaded,{0}", photo.BlobReference));
-			this.GetCloudQueue().AddMessage(msg);
+			 try
+			 {
+				  //Send create notification
+				  var msg = new CloudQueueMessage(string.Format("Photo Uploaded,{0}", photo.BlobReference));
+				  this.GetCloudQueue().AddMessage(msg);
+			 }
+			 catch (Exception e)
+			 {
+				  System.Diagnostics.Trace.TraceInformation("Error", "Couldn't send notification");
+			 }
 
 			return this.RedirectToAction("Index");
 		}
@@ -1948,7 +1975,7 @@ In this task you will update table security to use stored access signature.
 	````
 1. Open the **BaseController.cs** class and locate the _OnActionExecuting_ method. Replace the _GetSharedAccessSingature_ method for queues with the following code.
 
-	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex5-GetSharedAccessSignatureWithStoredAccessPolicy_)
+	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex5-GetQueueSasWithStoredAccessPolicy_)
 
 	<!-- mark:5-7 -->
 	````C#
@@ -2012,21 +2039,24 @@ In this task you will update table security to use stored access signature.
 
 	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex5-QueueSharedAccessSignatureWithStoredAccessPolicyInWorkerRole_)
 
-	<!-- mark:5-10 -->
+	<!-- mark:8-14 -->
 	````C#
-	private CloudQueueClient RefreshQueueClient()
+	private string GetQueueSas()
 	{
-		...
+		var storageAccount = CloudStorageAccount.Parse(CloudConfigurationManager.GetSetting("StorageConnectionString"));
+		var client = storageAccount.CreateCloudQueueClient();
+		var queue = client.GetQueueReference("messagequeue");
+		queue.CreateIfNotExists();
 
 		QueuePermissions qp = new QueuePermissions();
 		qp.SharedAccessPolicies.Add("process", new SharedAccessQueuePolicy { Permissions = SharedAccessQueuePermissions.ProcessMessages | SharedAccessQueuePermissions.Read, SharedAccessExpiryTime = DateTime.UtcNow.AddMinutes(15) });
 		queue.SetPermissions(qp);
-		var token = queue.GetSharedAccessSignature(
-					 new SharedAccessQueuePolicy(),
-						"process");
 
+		var token = queue.GetSharedAccessSignature(
+						 new SharedAccessQueuePolicy(),
+							 "process");
 		this.serviceQueueSasExpiryTime = DateTime.UtcNow.AddMinutes(15);
-		return new CloudQueueClient(uri, new Microsoft.WindowsAzure.Storage.Auth.StorageCredentials(token));
+		return token;
 	}
 	````
 
@@ -2105,6 +2135,16 @@ In this task you will update table security to use stored access signature.
 	_Sharing a photo with Stored Access Policy_
 
 	>**Note**: Notice how there's a new parameter in the query string named _si_ that has the value _read_ which is the Signed Identifier.
+
+1. Go back to the **Index** view and click on **Create**.
+
+1. Upload a new image of your choice.
+
+1. Open the compute emulator and check how the **Properties** and **Metadata** are logged by the Worker Role.
+
+	![Compute Emulator logs in worker role](Images/compute-emulator-logs-in-worker-role.png?raw=true "Compute Emulator logs in worker role")
+
+	_Compute Emulator logs in worker role_
 
 ---
 
