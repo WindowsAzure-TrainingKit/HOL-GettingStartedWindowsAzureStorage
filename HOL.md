@@ -20,7 +20,6 @@ Table storage is a collection of row like entities, each of which can contain up
 Blobs provide a way to store large amounts of unstructured, binary data, such as video, audio, images, etc.  One of the features of blobs is streaming content such as video or audio.
 
 **Queue Storage**
-
 Queues provide storage for passing messages between applications. Messages stored to the queue are limited to a maximum of 8KB in size, and are generally stored and retrieved on a first in, first out (FIFO) basis (however FIFO is not guaranteed). Processing messages from a queue is a two stage process, which involves getting the message, and then deleting the message after it has been processed.  This pattern allows you to implement guaranteed message delivery by leaving the message in the queue until it has been fully processed.
 
 
@@ -1064,13 +1063,13 @@ In this exercise you will learn how to use Shared Access Signatures with the thr
 
 In this task you will learn how to create SAS for Azure tables. SAS for table allows owners to grant SAS token access by restricting the operations in several ways.
 
-You can grant access to an entire table, to a table range (for example, to all the rows under a particular partion key), or some specific rows. Additionally, you can grant access rights to the specified table or table range such as _Query_, _Add_, _Update_, _Delete_ or a combination of them. Finally, you can specify the SAS token access time.
+You can grant access to an entire table, to a table range (for example, to all the rows under a particular partition key), or some specific rows. Additionally, you can grant access rights to the specified table or table range such as _Query_, _Add_, _Update_, _Delete_ or a combination of them. Finally, you can specify the SAS token access time.
 
 1. Continue working with the end solution of the previous exercise or open the solution located at _Source/Ex04-IntroducingSAS/Begin_.
 
 1. Open the **PhotoEntity** class, located in the _Models_ folder.
 
-1. Modify the default constructor to use _"Public"_ as the partiton key by default, and add an overloaded constructor that receives a partition key as a parameter.
+1. Modify the default constructor to use _"Public"_ as the partition key by default, and add an overloaded constructor that receives a partition key as a parameter.
 	
 	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex4-UpdatePhotoEntityConstructors_)
 	<!-- mark:3-13 -->
@@ -1093,7 +1092,7 @@ You can grant access to an entire table, to a table range (for example, to all t
 	}
 	````
 
-1. Open the **PhotoDataServiceContext.cs** file and locate the **GetSas** method. Replace the entire method with this new implementation.
+1. Open the **PhotoDataServiceContext.cs** file and create a new method called **GetSas**.
 
 	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex4-NewImplementationGetSasMethod_)
 
@@ -1154,7 +1153,7 @@ You can grant access to an entire table, to a table range (for example, to all t
 	public string PublicTableSas { get; set; }
 	````
 
-	>**Note**: Replace the _http://127.0.0.1:10002/devstoreaccount1_ with your storage table account URI in order to work against Windows Azure.
+	>**Note**: Replace the _http://127.0.0.1:10002/devstoreaccount1_ with your storage account table URI in order to work against Windows Azure.
 
 1. Override the **OnActionExecuting** method in the **BaseController** class.
 	
@@ -1255,7 +1254,7 @@ You can grant access to an entire table, to a table range (for example, to all t
 
 1. Repeate the previous step in the **Edit** and **Delete** _GET_ actions and in the **Delete** _Post_ action.
 
-1. Locate the **Create** _Post_ action and add new bool parameter called Public.
+1. Locate the **Create** _Post_ action and add new **bool** parameter called **Public**.
 
 	````C#
 	[HttpPost]
@@ -1266,7 +1265,8 @@ You can grant access to an entire table, to a table range (for example, to all t
 	````
 
 1. Update the **Create** _Post_ action and update the _photoViewModel_ partitionKey with the following.
-
+	
+	<!-- mark:1 -->
 	````C#
 	photoViewModel.PartitionKey = Public ? "Public" : this.User.Identity.Name;
 	````
@@ -1388,7 +1388,7 @@ You can grant access to an entire table, to a table range (for example, to all t
 
 1. Open the _Create.cshtml_ file, located at the _Views/Home_ folder.
 
-1. Add the following **if** statement before the **input** element. This code adds a checkbox to upload the new photo as public if the user is authenticated. If it is not authenticated, the photo will be uploaded as public by default.
+1. Add the following **if** statement before the **input** with type **file** element. This code adds a checkbox to upload the new photo as public if the user is authenticated. If it is not authenticated, the photo will be uploaded as public by default.
 
 	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex4-CreateViewUpdate_)
 
@@ -1412,7 +1412,7 @@ You can grant access to an entire table, to a table range (for example, to all t
 	````
 1. Run the solution by pressing **F5**.
 
-1. If you previously upload a photo, you will be able to see them listed; otherwise upload a new photo by clicking the **Create** link. The listed photos are public and can be seen by all application users, even if they are not authenticated.
+1. If you previously uploaded a photo, you will be able to see it listed; otherwise upload a new photo by clicking the **Create** link. The listed photos are public and can be seen by all application users, even if they are not authenticated.
 
 	![Listing all the public photos](Images/listing-public-photos.png?raw=true "Listing all the public photos")
 
@@ -1556,7 +1556,7 @@ In this task you will learn how to create SAS for Azure Blobs. SAS can be create
 <a name="Ex4Task3" />
 #### Task 3 - Adding SAS at Queue level  ####
 
-In this task you will uses SAS at queue level to restrict access to the storage queues. SAS can enable Read, Add, Process, and Update permissions on the queue.
+In this task you will use SAS at queue level to restrict access to the storage queues. SAS can enable Read, Add, Process, and Update permissions on the queue.
 
 1. In the **QueueProcessor_WorkerRole** project, open the **WorkerRole** class.
 
@@ -1567,7 +1567,7 @@ In this task you will uses SAS at queue level to restrict access to the storage 
 	using Microsoft.WindowsAzure.Storage.Auth;
 	````
 
-1. Add the following class variables at the start of the class, that contains a reference to the Queue Uri and to the expiration time of the queue SAS token. Keep in mind that you can replace the local storage uri, with your Azure Queue Storage URL.
+1. Add the following class variables at the start of the class, that contain a reference to the Queue Uri and to the expiration time of the queue SAS token. Keep in mind that you can replace the local storage uri, with your Azure Queue Storage URL.
 
 	````C#
 	private DateTime serviceQueueSasExpiryTime;
@@ -1645,9 +1645,9 @@ In this task you will uses SAS at queue level to restrict access to the storage 
    public string QueueSas { get; set; }
 	````
 
-	>**Note**: In order to work against windows azure, you should update the Uri queue with the one in azure.
+	>**Note**: In order to work against Windows Azure, you should update the Uri queue with the one in azure.
 
-1. Replcae the if structure in the **OnActionExecuting** methodwith the following code.
+1. Replace the if structure in the **OnActionExecuting** method with the following code.
 
 	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex4-QueueSharedAccessSignature_)
 
@@ -1676,7 +1676,7 @@ In this task you will uses SAS at queue level to restrict access to the storage 
         }
 	````
 
-1. Open the **HomeController** and locate the **GetCloudQueue** method and replace the code with the following snippet.
+1. Open the **HomeController**, locate the **GetCloudQueue** method and replace the code with the following snippet.
 	
 	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex4-GetCloudQueueMethod_)
 
@@ -1973,7 +1973,7 @@ In this task you will update table security to use stored access signature.
 
 	}
 	````
-1. Open the **BaseController.cs** class and locate the _OnActionExecuting_ method. Replace the _GetSharedAccessSingature_ method for queues with the following code.
+1. Open the **BaseController.cs** class and locate the _OnActionExecuting_ method. Replace the _GetSharedAccessSignature_ method for queues with the following code.
 
 	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex5-GetQueueSasWithStoredAccessPolicy_)
 
@@ -1991,7 +1991,7 @@ In this task you will update table security to use stored access signature.
 
 1. On the **QueueProcessor_WorkerRole** project, open the **WorkerRole.cs** class.
 
-1. Add the following uing statements.
+1. Add the following using statements.
 
 	````C#
 	using Microsoft.WindowsAzure.Storage.Blob;
@@ -2035,7 +2035,7 @@ In this task you will update table security to use stored access signature.
 	}
 	````
 
-1. Scroll down to the **GetQueueSas** method. Replace the **GetSharedAccessPolicy** method with the following code.
+1. Scroll down to the **GetQueueSas** method. Replace the **GetSharedAccessignature** method with the following code.
 
 	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex5-QueueSharedAccessSignatureWithStoredAccessPolicyInWorkerRole_)
 
@@ -2060,7 +2060,7 @@ In this task you will update table security to use stored access signature.
 	}
 	````
 
-1. Add the following code to the **Run** method in the **WorkerRole** class in order to display the properties and metadata saved in the WebRole. Place them inside the **if** block, at the begining.
+1. Add the following code to the **Run** method in the **WorkerRole** class in order to display the properties and metadata saved in the WebRole. Place them inside the **if** block, at the beginning.
 
 	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex5-RunMethodUpdate_)
 
