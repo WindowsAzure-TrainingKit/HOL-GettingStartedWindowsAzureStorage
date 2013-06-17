@@ -12,7 +12,6 @@ using Microsoft.WindowsAzure.Storage.Table;
 using Microsoft.WindowsAzure.Storage.Blob;
 using Microsoft.WindowsAzure.Storage.Queue;
 using Microsoft.WindowsAzure.Storage.Auth;
-using System.Collections.Generic;
 
 namespace PhotoUploader_WebRole.Controllers
 {

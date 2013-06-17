@@ -33,7 +33,7 @@ namespace QueueProcessor_WorkerRole
                 Thread.Sleep(10000);
                 Trace.TraceInformation("Working", "Information");
 
-                if (DateTime.UtcNow.AddMinutes(-1) >= this.serviceQueueSasExpiryTime)
+                if (DateTime.UtcNow.AddMinutes(1) >= this.serviceQueueSasExpiryTime)
                 {
                     queueClient = new CloudQueueClient(this.uri, new StorageCredentials(this.GetQueueSas()));
                     queue = queueClient.GetQueueReference("messagequeue");
