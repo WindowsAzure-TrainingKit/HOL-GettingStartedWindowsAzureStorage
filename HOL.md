@@ -184,7 +184,7 @@ You can monitor your storage accounts in the Windows Azure Management Portal. Fo
 
 	_Changing Chart values to Absolute_
 
-1.	To change the time range the metrics chart displays, select **6 hours**, **24 hours**, or **1 days** at the top of the chart.
+1.	To change the time range the metrics chart displays, select **6 hours** or **24 hours** at the top of the chart.
 
 	![dashboard-time-ranges](Images/dashboard-time-ranges.png?raw=true)
 
@@ -200,17 +200,11 @@ You can monitor your storage accounts in the Windows Azure Management Portal. Fo
 
 	_Adding Metrics_
 
-1.	In the dialog box, you can choose from a list of different types of metrics for each service. On the right, click the arrow to collapse the list.
+1.	In the dialog box, you can choose from a list of different types of metrics for each service. You can select the metrics you want to display in the **Monitor** table.Click **OK** to continue.
 
-	![collapsing-metrics](Images/collapsing-metrics.png?raw=true)
+	![Select Metrics to Monitor dialog](Images/select-metrics-to-monitor-dialog.png?raw=true "Select Metrics to Monitor dialog")
 
-	_Collapsing Metrics_
-
-1.	You will see a list of groups of metrics for the different services. You can expand and select the metrics you want to display in the **Monitor** table. Click **OK** to continue.
-
-	![collapsed-metrics-list](Images/collapsed-metrics-list.png?raw=true)
-
-	_Groups of Metrics by Service_
+	_Select Metrics to Monitor dialog_
 
 1.	The metrics you selected will be displayed on the **Monitor** table.
 
@@ -1807,6 +1801,8 @@ In this task you will update table security to use stored access signature.
 	}
 	````
 
+	>**Note**: Replace the _<http://127.0.0.1:10002/devstoreaccount1>_ with your storage account table URI in order to work against Windows Azure if not already replaced.
+
 <a name="Ex5Task2" />
 #### Task 2 - Updating blob security to use stored access policy ####
 
@@ -1833,6 +1829,8 @@ In this task you will update table security to use stored access signature.
 		blob.SetPermissions(bp);
  }
 	````
+
+	>**Note**: Replace the _<http://127.0.0.1:10002/devstoreaccount1>_ with your storage account table URI in order to work against Windows Azure if not already replaced.
 
 1. Open the **PhotoDataServiceContext.cs** class and replace the _GetSasForBlob_ method with the following implementation.
 
@@ -1973,6 +1971,8 @@ In this task you will update table security to use stored access signature.
 
 	}
 	````
+	>**Note**: Replace the _<http://127.0.0.1:10002/devstoreaccount1>_ with your storage account table URI in order to work against Windows Azure if not already replaced.
+
 1. Open the **BaseController.cs** class and locate the _OnActionExecuting_ method. Replace the _GetSharedAccessSignature_ method for queues with the following code.
 
 	(Code Snippet - _GettingStartedWindowsAzureStorage_ - _Ex5-GetQueueSasWithStoredAccessPolicy_)
