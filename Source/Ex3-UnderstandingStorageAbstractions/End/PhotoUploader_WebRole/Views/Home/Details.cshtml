@@ -30,6 +30,6 @@
     </div>
 </fieldset>
 <p>
-    @Html.ActionLink("Edit", "Edit", new { id=Model.RowKey }) |
+    @Html.ActionLink("Edit", "Edit", new { partitionKey = Model.PartitionKey, rowKey = Model.RowKey }) |
     @Html.ActionLink("Back to List", "Index")
 </p>
